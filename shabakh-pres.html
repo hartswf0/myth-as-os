@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shabaka Stone — Ptah, Heart and Tongue</title>
+  <meta name="description" content="Single-file canvas presentation on the Shabaka Stone and the etymology/history of the name Egypt." />
+  <style>
+    :root{ --bg:#0f1114; --panel:#16191f; --text:#e9edf3; --muted:#9aa3ad; --accent:#e0523f; --border:#2a3038 }
+    .theme-light{ --bg:#f8f9fb; --panel:#ffffff; --text:#1a1d22; --muted:#66707a; --accent:#b63f34; --border:#e3e6ea }
+    .theme-news{ --bg:#f7f2e6; --panel:#fffaf0; --text:#2e261b; --muted:#6c6659; --accent:#7b3d00; --border:#e4d6b7 }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background:var(--bg); color:var(--text); font:17px/1.7 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial}
+
+    header{position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--panel) 85%, transparent); border-bottom:1px solid var(--border); backdrop-filter: blur(6px)}
+    .bar{max-width:1100px; margin:0 auto; padding:10px 12px; display:flex; gap:10px; align-items:center}
+    .brand{font-weight:800; letter-spacing:.2px}
+    .controls{margin-left:auto; display:flex; gap:8px; align-items:center}
+    select, button{appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:10px; padding:8px 10px; cursor:pointer}
+
+    /* Stage keeps 16:9, centers, scales */
+    main.stage{display:grid; place-items:center; padding:10px}
+    .slide{ width:min(1200px, 92vw); aspect-ratio:16/9; background:radial-gradient(40% 60% at 50% 35%, color-mix(in srgb, var(--panel) 85%, white), var(--panel) 70%); border:1px solid var(--border); border-radius:16px; box-shadow:0 12px 36px rgba(0,0,0,.25); display:grid; grid-template-rows:auto 1fr auto; padding:24px; overflow:hidden }
+    .slide h1,.slide h2{margin:0 0 10px; line-height:1.15}
+    .slide h1{font-size:clamp(26px,3.8vw,40px)}
+    .slide h2{font-size:clamp(20px,3vw,30px); color:color-mix(in srgb, var(--accent) 55%, var(--text))}
+    .lead{font-size:clamp(16px,2.1vw,20px)}
+    .quote{font-style:italic; background:color-mix(in srgb, var(--panel) 90%, var(--accent) 10%); border:1px dashed color-mix(in srgb, var(--accent) 35%, var(--border)); padding:12px; border-radius:12px}
+    .mainpoints{margin:12px 0; padding-left:22px; font-size:clamp(16px,2vw,19px)}
+    .mainpoints li{margin:6px 0}
+    .kicker{color:var(--muted); font-size:.9rem}
+    .pager{display:flex; gap:8px; align-items:center}
+    .counter{color:var(--muted); font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+    .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); opacity:.9}
+
+    /* Media layouts */
+    .content{display:grid; grid-template-columns: 1fr; gap:14px}
+    .with-side{grid-template-columns: 1.2fr .8fr}
+    .media-side{display:flex; align-items:center; justify-content:center}
+    .media-side img{max-width:100%; max-height:100%; border-radius:12px; border:1px solid var(--border); box-shadow:0 6px 20px rgba(0,0,0,.24)}
+    .media-bg{position:absolute; inset:0; background-position:center; background-size:cover; opacity:.18; filter:saturate(.9) contrast(1.05)}
+    .slide.has-bg{position:relative}
+
+    .meta{color:var(--muted); font:500 0.85rem ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+    a{color:var(--accent)}
+    .kbd{padding:2px 6px; border:1px solid var(--border); border-radius:6px; background:var(--panel); color:var(--muted); font:600 0.75rem ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+    @media (max-width:640px){ .slide{padding:18px} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div class="brand">Shabaka Stone — Memphite Theology</div>
+      <div class="controls">
+        <label class="meta" for="theme">Theme</label>
+        <select id="theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="news">News</option>
+        </select>
+        <span class="meta">Press <span class="kbd">T</span> to cycle</span>
+      </div>
+    </div>
+    <div id="editor" class="bar" style="display:none; border-top:1px solid var(--border);">
+      <label class="meta" style="min-width:80px">Slide Media</label>
+      <input id="q" placeholder="Search term (e.g., Ptah Memphis relief)" style="flex:1; min-width:200px; padding:8px; border-radius:10px; border:1px solid var(--border); background:var(--panel); color:var(--text)" />
+      <button id="gg">Google</button>
+      <button id="ddg">DuckDuckGo</button>
+      <button id="wm">Wikimedia</button>
+      <input id="img" placeholder="Image URL (paste from search)" style="flex:1; min-width:200px; padding:8px; border-radius:10px; border:1px solid var(--border); background:var(--panel); color:var(--text)" />
+      <select id="layout">
+        <option value="side">Side</option>
+        <option value="bg">Background</option>
+      </select>
+      <button id="save">Save</button>
+      <label class="meta" style="margin-left:auto">Edit <input id="toggleEdit" type="checkbox" /></label>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section id="slides"></section>
+  </main>
+
+  <script>
+    // Slides content
+    const slides = [
+      {
+        h1: 'The Shabaka Stone — Memphite Theology',
+        body: `<p class="lead"><strong>Shabaka Stone</strong> (c. 716–702 BCE): basalt slab inscribed with the Memphite Theology, elevating <strong>Ptah</strong> as cosmic origin. Pharaoh Shabaka claims to recopy a "worm‑eaten" papyrus to assert Memphis’s supremacy.<sup>[1][2]</sup></p>`
+      },
+      {
+        h2: 'Ptah creates by Heart and Tongue',
+        body: `
+          <ul class="mainpoints">
+            <li>Ptah births the Ennead and world by <em>heart</em> (will/intellect) and <em>tongue</em> (speech).</li>
+            <li>Contrasts Heliopolitan semen‑generation of Atum; here creation is <em>verbal and deliberate</em>.</li>
+          </ul>
+          <div class="quote">“For the very great one is Ptah… gave life to all the gods and their kas through this heart and through this tongue… which gave birth to the Ennead.”<sup>[3]</sup></div>
+          <div class="quote" style="margin-top:8px">“Heart and tongue rule over all the limbs… thinking whatever it wishes and commanding whatever it wishes.”<sup>[3]</sup></div>
+        `
+      },
+      {
+        h2: 'Political and Cultic Aims',
+        body: `
+          <ul class="mainpoints">
+            <li><strong>Theological supremacy</strong>: Memphis’s Ptah precedes/supersedes Heliopolis’s Atum.<sup>[1]</sup></li>
+            <li><strong>Royal legitimacy</strong>: Shabaka aligns Nubian rule with Ptah’s priesthood; presents himself as rescuer of ancestral wisdom.<sup>[2][4]</sup></li>
+            <li><em>Hwt‑ka‑Ptah</em> (“House of the Ka of Ptah”) = city + cosmic center.</li>
+          </ul>
+        `
+      },
+      {
+        h2: 'Structure and Key Passages',
+        body: `
+          <ul class="mainpoints">
+            <li><strong>Proem (1–11)</strong>: discovery + copying.</li>
+            <li><strong>Creation (12–32)</strong>: heart/tongue; Horus–Seth division.</li>
+            <li><strong>Memphite Order (33–48)</strong>: Horus/Seth pacified in House of Ptah → national unity.</li>
+            <li><strong>Genealogy (49–58)</strong>: Ptah‑Nun(‑Naunet) beget Atum; Ptah’s voice as generative mouth.</li>
+            <li><strong>Epilogue (59–62)</strong>: ongoing power + doxology.</li>
+          </ul>
+          <p class="lead">Despite millstone damage, the text fuses <strong>cosmology</strong>, <strong>ritual</strong>, and <strong>royal propaganda</strong>.<sup>[1]</sup></p>
+        `
+      },
+      {
+        h2: 'Symbolic Dimensions of Creative Speech',
+        body: `
+          <ul class="mainpoints">
+            <li><strong>Heart (ib)</strong>: seat of intellect/will; conceives beings.</li>
+            <li><strong>Tongue (dpḥ)</strong>: names/pronounces → calls into existence; naming ≈ being.</li>
+            <li>Iconography: scepter + writing palette → word and crafted form.</li>
+          </ul>
+        `
+      },
+      {
+        h2: 'Legacy and Influence',
+        body: `
+          <ul class="mainpoints">
+            <li>Canonizes a <strong>Memphite counter‑theology</strong>.</li>
+            <li>Frames creation as <strong>nous + logos</strong> → prefigures philosophical “word as world‑maker”.</li>
+            <li>Enduring lens on kingship, liturgy, and speech‑magic.<sup>[2][1]</sup></li>
+          </ul>
+        `
+      },
+      {
+        h2: 'Etymology of “Egypt”: Kemet → Hwt‑ka‑Ptah',
+        body: `
+          <ul class="mainpoints">
+            <li><strong>Kemet</strong> (kmt) “Black Land” vs <strong>Deshret</strong> “Red Land”. Coptic preserves <em>kēmə/xemi</em>; Greek <em>Khēmía</em> → “chemistry”.<sup>[1][2][3][7][8]</sup></li>
+            <li><strong>Hwt‑ka‑Ptah</strong>: “House of the Ka of Ptah” — Memphis epithet tied to Ptah’s speech‑creation.<sup>[9–15]</sup></li>
+          </ul>
+        `
+      },
+      {
+        h2: 'Aigyptos → Aegyptus → Egypte → Egypt',
+        body: `
+          <ul class="mainpoints">
+            <li>Greek <strong>Aigyptos</strong> from <em>Hwt‑ka‑Ptah</em> via phonetic adaptation; temple name generalized to the land.<sup>[9]</sup></li>
+            <li>Latin <strong>Aegyptus</strong> → Middle French <strong>Egypte</strong> → English <strong>Egypt</strong>.<sup>[16–17]</sup></li>
+          </ul>
+        `
+      },
+      {
+        h2: 'Semitic Names + Alphabetic Connection',
+        body: `
+          <ul class="mainpoints">
+            <li><strong>Mizraim</strong> (Hebrew, dual “Two Lands”) and <strong>Misr/Maṣr</strong> (Arabic) continue the Semitic line.<sup>[18–21]</sup></li>
+            <li><strong>Proto‑Sinaitic</strong> adapts hieroglyphs → alphabet; seeds Phoenician → Greek → Latin scripts.<sup>[22–26]</sup></li>
+          </ul>
+        `
+      },
+      {
+        h2: 'Coptic → Arabic; How Names Shift',
+        body: `
+          <ul class="mainpoints">
+            <li>Coptic preserves <em>Kemet</em>; Arabic prevails later, with parallel Greco‑Roman “Egypt” vs Semitic “Misr”.<sup>[29–30]</sup></li>
+            <li>Borrowing patterns: cluster simplification; vowel insertion; final‑consonant loss; stress changes.</li>
+            <li>Semantic drift: temple‑specific → generalized toponym.</li>
+          </ul>
+        `
+      },
+      {
+        h2: 'References (selected)',
+        body: `
+          <p class="meta">Links open in a new tab.</p>
+          <ul class="mainpoints">
+            <li><a href="https://www.britishmuseum.org/collection/object/Y_EA498" target="_blank">British Museum EA498</a> • <a href="https://en.wikipedia.org/wiki/Shabaka_Stone" target="_blank">Wikipedia</a> • <a href="http://attalus.org/egypt/shabaka_stone.html" target="_blank">Attalus</a></li>
+            <li><a href="https://intertextual.bible/book/the-memphite-theology/chapter/all" target="_blank">Intertextual Bible</a> • <a href="https://scholarsarchive.byu.edu/cgi/viewcontent.cgi?article=1131&context=studiaantiqua" target="_blank">BYU Studia Antiqua</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Proto-Sinaitic_script" target="_blank">Proto‑Sinaitic</a> • <a href="https://museum.imj.org.il/en/exhibitions/2016/pharaoh-in-canaan/pdf/alphabet-en.pdf" target="_blank">IMJ Alphabet</a></li>
+          </ul>
+          <p class="kicker">Press ←/→ or Space. Press T to change theme.</p>
+        `
+      }
+    ];
+
+    // Render
+    const $slides = document.getElementById('slides');
+    // Persisted media config per slide
+    const STORE_KEY = 'shabaka_media_v1';
+    function loadMedia(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'{}'); }catch{ return {}; } }
+    function saveMedia(obj){ localStorage.setItem(STORE_KEY, JSON.stringify(obj)); }
+    let MEDIA = loadMedia();
+
+    function render(){
+      $slides.innerHTML = slides.map((s,i)=>{
+        const head = s.h1? `<header><h1>${s.h1}</h1></header>` : `<header><h2>${s.h2||''}</h2></header>`;
+        const m = MEDIA[i]||{}; const img = m.img||''; const layout = m.layout||'side';
+        const bg = (layout==='bg' && img) ? `<div class="media-bg" style="background-image:url('${img.replace(/'/g,"%27")}')"></div>` : '';
+        const side = (layout==='side' && img) ? `<div class="media-side"><img src="${img}" alt="slide image" loading="lazy" /></div>` : '';
+        const contentCls = (layout==='side' && img) ? 'content with-side' : 'content';
+        return `
+          <article class="slide ${layout==='bg'&&img?'has-bg':''}" data-idx="${i}">
+            ${bg}
+            ${head}
+            <div class="${contentCls}">
+              <div>${s.body||''}</div>
+              ${side||''}
+            </div>
+            <footer class="kicker">Memphis • Ptah • Heart & Tongue</footer>
+          </article>`
+      }).join('');
+    }
+    render();
+
+    // Navigation
+    const total = slides.length; let idx = 0; const $theme = document.getElementById('theme');
+    const $hdr = document.querySelector('header .bar');
+    const ctr = document.createElement('span'); ctr.id='ctr'; ctr.className='meta'; ctr.style.marginLeft='8px';
+    const prevB = document.createElement('button'); prevB.textContent='◀ Prev';
+    const nextB = document.createElement('button'); nextB.textContent='Next ▶'; nextB.className='accent';
+    $hdr.append(prevB, nextB, ctr);
+
+    function update(){
+      document.querySelectorAll('.slide').forEach((el,i)=>{ el.style.display = (i===idx)? 'grid':'none'; });
+      ctr.textContent = `${idx+1} / ${total}`;
+      history.replaceState(null, '', '#' + (idx+1));
+    }
+    function show(i){ idx = Math.max(0, Math.min(total-1, i)); update(); }
+    prevB.addEventListener('click', ()=> show(idx-1));
+    nextB.addEventListener('click', ()=> show(idx+1));
+    window.addEventListener('keydown', (e)=>{
+      if(e.key==='ArrowLeft') show(idx-1);
+      if(e.key==='ArrowRight' || e.key===' ') show(idx+1);
+      if(e.key.toLowerCase()==='t') cycleTheme();
+    });
+    const start = Math.max(1, Math.min(total, parseInt(location.hash.replace('#','')||'1',10)))-1; show(start);
+
+    // Editor wiring
+    const $editor = document.getElementById('editor');
+    const $toggleEdit = document.getElementById('toggleEdit');
+    const $q = document.getElementById('q');
+    const $img = document.getElementById('img');
+    const $layout = document.getElementById('layout');
+    const $save = document.getElementById('save');
+    const $gg = document.getElementById('gg');
+    const $ddg = document.getElementById('ddg');
+    const $wm = document.getElementById('wm');
+
+    function syncEditor(){ const m = MEDIA[idx]||{}; $q.value = m.q||''; $img.value = m.img||''; $layout.value = m.layout||'side'; }
+    function openSearch(kind){
+      const q = encodeURIComponent(($q.value||'').trim()); if(!q) return;
+      let url = '';
+      if(kind==='gg') url = `https://www.google.com/search?tbm=isch&q=${q}`;
+      if(kind==='ddg') url = `https://duckduckgo.com/?q=${q}&t=h_&iar=images&iax=images&ia=images`;
+      if(kind==='wm') url = `https://commons.wikimedia.org/w/index.php?search=${q}&title=Special:MediaSearch&type=image`;
+      if(url) window.open(url, '_blank');
+    }
+    $gg.addEventListener('click', ()=> openSearch('gg'));
+    $ddg.addEventListener('click', ()=> openSearch('ddg'));
+    $wm.addEventListener('click', ()=> openSearch('wm'));
+    $save.addEventListener('click', ()=>{
+      MEDIA[idx] = { q: $q.value.trim(), img: $img.value.trim(), layout: $layout.value };
+      saveMedia(MEDIA);
+      render(); update(); syncEditor();
+    });
+    $toggleEdit.addEventListener('change', ()=>{ $editor.style.display = $toggleEdit.checked ? 'flex' : 'none'; });
+    // Keep editor synced when slide changes
+    const oldShow = show; show = (i)=>{ oldShow(i); syncEditor(); };
+    // Initialize editor state
+    syncEditor();
+
+    // Theme handling
+    const THEME_KEY = 'shabaka_theme';
+    function applyTheme(mode){
+      document.body.classList.remove('theme-light','theme-news');
+      if(mode==='light') document.body.classList.add('theme-light');
+      if(mode==='news') document.body.classList.add('theme-news');
+      localStorage.setItem(THEME_KEY, mode);
+      $theme.value = mode;
+    }
+    function cycleTheme(){
+      const order = ['dark','light','news'];
+      const cur = localStorage.getItem(THEME_KEY) || 'dark';
+      const next = order[(order.indexOf(cur)+1)%order.length];
+      applyTheme(next);
+    }
+    $theme.addEventListener('change', ()=> applyTheme($theme.value));
+    applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  </script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Saul Bass Visual Poetry Engine — Egypt Edition</title>
+<meta name="description" content="Transform any input text into Saul Bass–style animated concrete poetry. Includes presets on Ptah & the Shabaka Stone and the etymology of Egypt." />
+<style>
+  :root{
+    /* Core palette tokens (will be overridden by generator) */
+    --bg:#0b0c10;            /* deep black-blue */
+    --fg:#f0f3f8;            /* near white */
+    --muted:#9aa5b1;
+    --accent:#e63946;        /* Bass red */
+    --accent2:#f1fa8c;       /* punch yellow */
+    --paper:#0f1116;         /* canvas card */
+
+    /* Stage sizing */
+    --stage-w: min(1200px, 96vw);
+    --stage-h: calc(var(--stage-w) * 9 / 16);
+    --radius: 18px;
+
+    /* Timing */
+    --dur: 12s;              /* total runtime */
+    --open: 2s;              /* opening */
+    --develop: 6s;           /* development */
+    --climax: 2s;            /* climax */
+    --resolve: 2s;           /* resolution */
+
+    /* Typography */
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:linear-gradient(180deg, #0a0c12, #0b0c10);color:var(--fg);font-family:var(--font)}
+  header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg, rgba(11,12,16,.95), rgba(11,12,16,.75));backdrop-filter:saturate(140%) blur(6px);border-bottom:1px solid #11151c}
+  header .bar{max-width:1200px;margin:0 auto;padding:10px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .brand{font-weight:800;letter-spacing:.4px}
+  .tag{font-size:12px;color:var(--muted)}
+  main{max-width:1200px;margin:0 auto;padding:12px;display:grid;gap:12px;grid-template-columns:1.1fr .9fr}
+  @media (max-width:980px){ main{grid-template-columns:1fr;}}
+
+  /* Panels */
+  .panel{background:var(--paper);border:1px solid #171a22;border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.35);overflow:hidden}
+  .panel header{position:relative;background:transparent;border:none}
+  .panel h2{margin:0;padding:12px 12px 0 12px;font-size:18px}
+  .panel .body{padding:12px}
+
+  /* Controls */
+  .controls{display:grid;grid-template-columns:1fr;gap:10px}
+  .row{display:flex;flex-wrap:wrap;gap:10px}
+  label.small{font-size:12px;color:var(--muted)}
+  textarea#input{width:100%;min-height:132px;resize:vertical;background:#0c0f14;color:var(--fg);border:1px solid #1a2030;border-radius:12px;padding:10px;font:14px/1.5 var(--mono)}
+  .btn{appearance:none;border:none;background:#141925;color:var(--fg);border:1px solid #1b2233;padding:10px 12px;border-radius:12px;font-weight:700;cursor:pointer}
+  .btn[aria-pressed="true"]{outline:2px solid var(--accent)}
+  .btn.primary{background:var(--accent);border-color:#6c0f16;color:white}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px dashed #283044;padding:6px 10px;border-radius:999px;font-size:12px;color:#c4d0e0}
+
+  /* Stage */
+  .stage-wrap{display:grid;place-items:center;padding:6px;border-radius:var(--radius);background:conic-gradient(from 180deg at 50% 50%, #0b0c10, #0d0f14 20%, #0b0c10 40%, #0d0f14 60%, #0b0c10 80%, #0d0f14 100%)}
+  #stage{width:var(--stage-w);height:var(--stage-h);display:block;background:var(--bg);border-radius:16px;border:1px solid #171a22;position:relative;overflow:hidden}
+  #svg{width:100%;height:100%;display:block}
+  .hud{position:absolute;inset:auto 10px 10px 10px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}
+  .hud .label{background:rgba(0,0,0,.45);padding:6px 10px;border-radius:10px;font:12px var(--mono);color:#cbd5e1}
+
+  /* Timeline bar */
+  .timeline{display:grid;grid-template-columns:var(--open) var(--develop) var(--climax) var(--resolve);gap:0;height:8px;border-radius:999px;overflow:hidden;border:1px solid #223}
+  .timeline > div:nth-child(1){background:#2a2d39}
+  .timeline > div:nth-child(2){background:#373b4b}
+  .timeline > div:nth-child(3){background:#4a5066}
+  .timeline > div:nth-child(4){background:#2a2d39}
+
+  /* Right column */
+  .right .section{padding:10px 12px;border-top:1px solid #161a22}
+  .right h3{margin:0 0 6px 0;font-size:14px;color:#cbd5e1;letter-spacing:.3px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font:12px var(--mono)}
+  .kv .k{color:#9aa5b1}
+  .kv .v{color:#e6edf3}
+  .log{white-space:pre-wrap;font:12px/1.5 var(--mono);color:#cfe1ff;background:#0a0e14;border:1px solid #1a2030;border-radius:10px;padding:10px;max-height:180px;overflow:auto}
+
+  /* Prompt output */
+  textarea#promptOut{width:100%;min-height:150px;background:#0c0f14;color:#e6edf3;border:1px solid #1a2030;border-radius:12px;padding:10px;font:12px/1.4 var(--mono)}
+
+  /* SVG cutout aesthetics */
+  .paper-shadow{filter:drop-shadow(0 6px 0 rgba(0,0,0,.35)) drop-shadow(0 12px 20px rgba(0,0,0,.35))}
+  .rough{filter:url(#roughen)}
+  .grain{filter:url(#paperGrain)}
+
+  /* Animated tokens */
+  .enter{opacity:0}
+  .enter.show{opacity:1;transition:opacity .6s ease}
+
+  .slide-in{transform:translate(var(--tx,0), var(--ty,0)) scale(var(--sc,1)) rotate(var(--rot,0deg));opacity:0}
+  .slide-in.show{opacity:1;transition:transform 900ms cubic-bezier(.19,.85,.2,1), opacity 600ms ease}
+
+  /* Utility */
+  .grid{display:grid;gap:10px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  @media (max-width:600px){ .cols-2{grid-template-columns:1fr} }
+  details{background:#0c1119;border:1px solid #162032;border-radius:12px;padding:8px}
+  details summary{cursor:pointer;color:#dce6f6;font-weight:700}
+  details .note{color:#b7c3d7;font:13px/1.6 var(--font);padding:8px 2px}
+
+  /* Palette swatches */
+  .swatches{display:flex;gap:6px;align-items:center}
+  .swatch{width:18px;height:18px;border-radius:4px;border:1px solid #1a2030}
+
+  /* Footer */
+  footer{max-width:1200px;margin:10px auto;padding:12px;color:#98a5b8;font:12px var(--mono)}
+</style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div>
+        <div class="brand">Saul Bass Visual Poetry Engine</div>
+        <div class="tag">paper‑cutout motion graphics · John Whitney math · concrete poetry layout</div>
+      </div>
+      <div style="margin-left:auto" class="timeline" aria-label="Timeline: opening, development, climax, resolution">
+        <div></div><div></div><div></div><div></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT: Controls + Stage -->
+    <section class="panel">
+      <header><h2>Input & Controls</h2></header>
+      <div class="body controls">
+        <div class="row">
+          <button class="btn ghost" id="preset-night">Load: “Night Sky Whispers”</button>
+          <button class="btn ghost" id="preset-ptah">Load: Ptah / Shabaka Stone (short)</button>
+          <button class="btn ghost" id="preset-egypt">Load: Etymology of Egypt (short)</button>
+        </div>
+        <label class="small" for="input">Text to visualize</label>
+        <textarea id="input" placeholder="Paste any text (poem, title, phrase). Then hit Generate."></textarea>
+
+        <div class="grid cols-2">
+          <div>
+            <label class="small">Palette</label>
+            <div class="row" id="paletteRow"></div>
+          </div>
+          <div>
+            <label class="small">Mode</label>
+            <div class="row">
+              <button class="btn" id="mode-auto" aria-pressed="true">Auto</button>
+              <button class="btn" id="mode-bass">Bass Geometry</button>
+              <button class="btn" id="mode-whitney">Whitney Curves</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid cols-2">
+          <div>
+            <label class="small" for="dur">Duration (8–16s)</label>
+            <input id="dur" type="range" min="8" max="16" value="12" step="1" />
+          </div>
+          <div>
+            <label class="small">Paper Cutout</label>
+            <div class="row">
+              <button class="btn" id="cutout-on" aria-pressed="true">On</button>
+              <button class="btn" id="cutout-off">Off</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn primary" id="generate">Generate</button>
+          <button class="btn" id="play">Play</button>
+          <button class="btn" id="pause">Pause</button>
+          <button class="btn" id="reset">Reset</button>
+          <button class="btn" id="export-svg">Export SVG</button>
+          <button class="btn" id="export-png">Export PNG</button>
+        </div>
+
+        <div class="stage-wrap">
+          <div id="stage" role="img" aria-label="Animation stage">
+            <svg id="svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <defs>
+                <!-- Grain / paper -->
+                <filter id="paperGrain">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
+                  <feColorMatrix type="saturate" values="0"/>
+                  <feComponentTransfer>
+                    <feFuncA type="table" tableValues="0 0.08"/>
+                  </feComponentTransfer>
+                </filter>
+                <!-- Slight edge roughen -->
+                <filter id="roughen">
+                  <feTurbulence type="turbulence" baseFrequency="0.006" numOctaves="1"/>
+                  <feDisplacementMap in="SourceGraphic" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+                </filter>
+                <clipPath id="safe">
+                  <rect x="30" y="30" width="1540" height="840" rx="8" ry="8"/>
+                </clipPath>
+                <!-- Paths will be injected dynamically -->
+              </defs>
+              <g clip-path="url(#safe)" id="layer-bg"></g>
+              <g clip-path="url(#safe)" id="layer-mid"></g>
+              <g clip-path="url(#safe)" id="layer-text"></g>
+            </svg>
+            <div class="hud">
+              <div class="label" id="hudLeft">—</div>
+              <div class="label" id="hudRight">00.0s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Analyzer, Params & Prompts -->
+    <aside class="panel right">
+      <header><h2>Analyzer & Prompts</h2></header>
+      <div class="section">
+        <h3>Auto Analysis</h3>
+        <div class="kv" id="kv"></div>
+      </div>
+      <div class="section">
+        <h3>Detected Keywords</h3>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="section">
+        <h3>Generator Log</h3>
+        <div class="log" id="log"></div>
+      </div>
+      <div class="section">
+        <h3>AI Image/Video Prompt</h3>
+        <textarea id="promptOut" readonly></textarea>
+      </div>
+      <div class="section">
+        <h3>Keyframe Instruction (12s)</h3>
+        <textarea id="kfOut" readonly></textarea>
+      </div>
+
+      <div class="section">
+        <details>
+          <summary>Research notes: Ptah & Shabaka Stone (toggle)</summary>
+          <div class="note" id="ptahNote"></div>
+        </details>
+        <details>
+          <summary>Research notes: Etymology of “Egypt” (toggle)</summary>
+          <div class="note" id="egyptNote"></div>
+        </details>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    Tip: the engine maps nouns → shapes, verbs → motions, and tone → palette & pacing. Use short, vivid phrases for punchy results; long texts are chunked into sequenced slates.
+  </footer>
+
+<script>
+// ===== Utility =====
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const logBox = $('#log');
+const hudLeft = $('#hudLeft');
+const hudRight = $('#hudRight');
+
+const palettes = [
+  {name:'Bass: Black/White/Red', colors:['#0b0c10','#f8fafc','#e63946'], id:'bwred'},
+  {name:'Noir: Black/White/Yellow', colors:['#0b0c10','#f8fafc','#ffd166'], id:'bwyel'},
+  {name:'Mystery: Black/White/Cyan', colors:['#0b0c10','#f8fafc','#00d1d1'], id:'bwcyan'},
+  {name:'Ocean: Navy/Ivory/Teal', colors:['#07121d','#f4f1e8','#2ec4b6'], id:'ocean'},
+  {name:'Memphis: Black/Sand/Blue', colors:['#0b0c10','#f2e7c9','#2a9df4'], id:'memphis'}
+];
+
+function mountPalettes(){
+  const row = $('#paletteRow');
+  palettes.forEach((p,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = p.name;
+    btn.dataset.pid = p.id;
+    btn.addEventListener('click', ()=>{
+      $$('#paletteRow .btn').forEach(b=>b.setAttribute('aria-pressed','false'));
+      btn.setAttribute('aria-pressed','true');
+      current.palette = p;
+      applyPalette(p.colors);
+      renderSwatches(p.colors);
+    });
+    if(i===0) btn.setAttribute('aria-pressed','true');
+    row.appendChild(btn);
+  })
+}
+
+function applyPalette([bg, fg, accent]){
+  document.documentElement.style.setProperty('--bg', bg);
+  document.documentElement.style.setProperty('--fg', fg);
+  document.documentElement.style.setProperty('--accent', accent);
+  // derive an extra accent2 that contrasts
+  const accent2 = (accent === '#e63946')? '#f1fa8c' : '#ff5e57';
+  document.documentElement.style.setProperty('--accent2', accent2);
+}
+
+function renderSwatches(cols){
+  const chips = $('#chips');
+  chips.innerHTML='';
+  const wrap = document.createElement('div');
+  wrap.className='swatches';
+  cols.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='swatch'; d.style.background=c; wrap.appendChild(d);
+  });
+  chips.appendChild(wrap);
+}
+
+function setDur(s){
+  document.documentElement.style.setProperty('--dur', s+'s');
+  // recompute coarse segments
+  const open = Math.max(1.5, Math.min(3, s*0.18));
+  const climax = Math.max(1.5, Math.min(3, s*0.16));
+  const resolve = Math.max(1.5, Math.min(3, s*0.16));
+  const develop = Math.max(3, s - open - climax - resolve);
+  document.documentElement.style.setProperty('--open', open+'s');
+  document.documentElement.style.setProperty('--develop', develop+'s');
+  document.documentElement.style.setProperty('--climax', climax+'s');
+  document.documentElement.style.setProperty('--resolve', resolve+'s');
+}
+
+function log(msg){
+  logBox.textContent += (msg + "\n");
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+// ===== Text Analyzer =====
+const toneLex = {
+  mystery:['secret','night','shadow','whisper','hidden','veil','mask','unknown'],
+  dramatic:['blood','fire','rage','storm','crash','fall','rise','break','kill'],
+  playful:['dance','play','laugh','light','breeze','tickle','sparkle','bounce'],
+  romantic:['love','heart','kiss','rose','tender','embrace','touch'],
+  nature:['river','tree','forest','leaf','stone','sky','sea','desert','sun','moon','stars'],
+  techno:['code','grid','signal','circuit','metal','machine','algorithm']
+}
+
+const colorAssoc = [
+  {keys:['night','shadow','secret','mystery'], palette: palettes[2]},
+  {keys:['blood','thriller','danger','knife'], palette: palettes[0]},
+  {keys:['sea','ocean','river','sky'], palette: palettes[3]},
+  {keys:['memphis','ptah','temple'], palette: palettes[4]},
+  {keys:['sun','desert','sand'], palette: {name:'Sahara: Black/Sand/Red', colors:['#0b0c10','#f2e7c9','#d1495b'], id:'sahara'}},
+]
+
+function tokenize(txt){
+  return txt.toLowerCase().replace(/[^a-z\s]/g,' ').split(/\s+/).filter(Boolean);
+}
+
+function pickTone(tokens){
+  let best='mystery', score=0;
+  for(const [tone,words] of Object.entries(toneLex)){
+    const s = words.reduce((a,w)=>a+(tokens.includes(w)?1:0),0);
+    if(s>score){score=s;best=tone;}
+  }
+  return best;
+}
+
+function nounsVerbs(tokens){
+  // lightweight guess: nouns by presence & ending, verbs by -ing/-ed/common verbs
+  const stop = new Set(['the','a','an','and','or','to','of','in','on','for','with','by','is','it','as','that','this','are','be']);
+  const commonVerbs=['whisper','rise','fall','cut','slice','turn','spin','run','bloom','breathe','drift','echo','chisel','carve','speak','name','divide','unite','form'];
+  const nouns=[], verbs=[];
+  tokens.forEach(t=>{
+    if(stop.has(t)) return;
+    if(commonVerbs.includes(t) || /ing$|ed$/.test(t)) verbs.push(t);
+    else nouns.push(t);
+  });
+  return {nouns:[...new Set(nouns)].slice(0,12), verbs:[...new Set(verbs)].slice(0,10)};
+}
+
+function assocPalette(tokens){
+  for(const rule of colorAssoc){
+    if(rule.keys.some(k=>tokens.includes(k))) return rule.palette;
+  }
+  return null;
+}
+
+function analyze(text){
+  const tokens = tokenize(text);
+  const tone = pickTone(tokens);
+  const nv = nounsVerbs(tokens);
+  // themes: first 2 nontrivial nouns
+  const theme = nv.nouns.slice(0,2).join(', ') || 'abstract';
+  const palette = assocPalette(tokens) || palettes[0];
+  const keyN = nv.nouns.slice(0,6);
+  const keyV = nv.verbs.slice(0,4);
+  const res = {tone, theme, tokens, keyN, keyV, palette};
+  return res;
+}
+
+// ===== Mapping: words → shapes & motions =====
+function nounToShape(n){
+  if(/heart/.test(n)) return 'heart';
+  if(/star|sky|night/.test(n)) return 'star';
+  if(/river|whisper|wind|snake/.test(n)) return 'spiral';
+  if(/temple|house|city|wall/.test(n)) return 'rect';
+  if(/sun|moon|eye|circle/.test(n)) return 'circle';
+  if(/grid|code|circuit/.test(n)) return 'grid';
+  if(/name|word|tongue|voice|ptah/.test(n)) return 'lissajous';
+  return ['rect','circle','triangle','spiral'][Math.floor(Math.random()*4)];
+}
+
+function verbToMotion(v){
+  if(/whisper|breathe|drift/.test(v)) return {tx:-40,ty:0,rot:-3,scale:1.02};
+  if(/rise/.test(v)) return {tx:0,ty:60,rot:0,scale:1.05};
+  if(/fall/.test(v)) return {tx:0,ty:-60,rot:0,scale:0.96};
+  if(/cut|slice/.test(v)) return {tx:120,ty:0,rot:6,scale:1};
+  if(/spin|turn/.test(v)) return {tx:0,ty:0,rot:30,scale:1};
+  if(/carve|chisel|form|name|speak/.test(v)) return {tx:-80,ty:20,rot:-8,scale:1};
+  return {tx:0,ty:0,rot:5,scale:1};
+}
+
+// ===== SVG Helpers =====
+const svg = $('#svg');
+const L = {bg: $('#layer-bg'), mid: $('#layer-mid'), text: $('#layer-text')};
+
+function clearLayers(){ L.bg.innerHTML=''; L.mid.innerHTML=''; L.text.innerHTML=''; logBox.textContent=''; }
+
+function make(el, attrs={}){
+  const e = document.createElementNS('http://www.w3.org/2000/svg', el);
+  for(const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+function rand(min, max){ return Math.random()*(max-min)+min; }
+
+function starPath(cx, cy, spikes=5, outerR=120, innerR=46){
+  const step = Math.PI / spikes; let rot = Math.PI/2 * 3; let x=cx, y=cy; let path=`M ${cx} ${cy-outerR}`;
+  for(let i=0;i<spikes;i++){
+    x = cx + Math.cos(rot) * outerR; y = cy + Math.sin(rot) * outerR; path += ` L ${x} ${y}`; rot += step;
+    x = cx + Math.cos(rot) * innerR; y = cy + Math.sin(rot) * innerR; path += ` L ${x} ${y}`; rot += step;
+  }
+  return path + ' Z';
+}
+
+function spiralPath(cx, cy, turns=3, step=8){
+  let path = `M ${cx} ${cy}`; let angle=0; let r=2;
+  const maxPts = turns * 360 / 6; // every 6deg
+  for(let i=0;i<maxPts;i++){
+    angle += 6 * Math.PI/180; r += step/30;
+    const x = cx + Math.cos(angle)*r; const y = cy + Math.sin(angle)*r;
+    path += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  return path;
+}
+
+function lissajousPath(cx, cy, a=3, b=2, A=280, B=160, delta=Math.PI/2){
+  let path='M ';
+  for(let t=0;t<=Math.PI*2;t+=0.01){
+    const x = cx + A*Math.sin(a*t + delta);
+    const y = cy + B*Math.sin(b*t);
+    path += `${x.toFixed(1)} ${y.toFixed(1)} ` + (t===0?'':'L ');
+  }
+  return path+'Z';
+}
+
+function trianglePath(cx, cy, size=220){
+  const h = size * Math.sqrt(3)/2;
+  return `M ${cx} ${cy-h/2} L ${cx-size/2} ${cy+h/2} L ${cx+size/2} ${cy+h/2} Z`;
+}
+
+function heartPath(cx, cy, size=160){
+  const s = size/2;
+  return `M ${cx} ${cy}
+    c ${-s} ${-s*1.1}, ${-s*1.6} ${s*.2}, 0 ${s*1.6}
+    c ${s*1.6} ${-s*1.4}, ${s} ${-s*2.3}, 0 ${-s*1.6} Z`;
+}
+
+function gridRects(g, cols=6, rows=3, gap=18){
+  const w = 1200/(cols+1), h = 600/(rows+1);
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const x = 130 + c*(w+gap);
+      const y = 140 + r*(h+gap);
+      const rect = make('rect',{x, y, width:w, height:h, rx:8, fill:'var(--accent)', class:'paper-shadow'});
+      g.appendChild(rect);
+    }
+  }
+}
+
+function textOnPath(g, text, pathId, size=44, weight=900){
+  const tp = make('text', {fill:'var(--fg)', 'font-size':size, 'font-weight':weight, 'letter-spacing':2, 'font-family':'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial'});
+  const tpath = make('textPath', {'href':`#${pathId}`, startOffset:'50%', 'text-anchor':'middle'});
+  tpath.textContent = text.toUpperCase();
+  tp.appendChild(tpath); g.appendChild(tp);
+}
+
+// ===== Sequence Engine =====
+let ticker=null, t0=0, paused=true, pauseAt=0, totalDur=12;
+function fmt(s){ return s.toFixed(1)+'s'; }
+
+function play(){ if(!paused) return; paused=false; t0=performance.now()-pauseAt; requestAnimationFrame(step); }
+function pause(){ paused=true; }
+function reset(){ pause(); pauseAt=0; hudRight.textContent='00.0s'; $$('g[id^="layer-"]').forEach(g=>g.querySelectorAll('.show').forEach(x=>x.classList.remove('show'))); }
+function step(now){ if(paused) {pauseAt = pauseAt; return;} const t=(now - t0)/1000; pauseAt = (now - t0); hudRight.textContent = t<100? ('0'+t.toFixed(1)).slice(-5)+'s' : t.toFixed(1)+'s';
+  // reveal waves by time
+  revealByTime(t);
+  if(t<totalDur) requestAnimationFrame(step);
+}
+
+function revealByTime(t){
+  const segOpen = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--open')); 
+  const segDev = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--develop')); 
+  const segClimax = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--climax')); 
+  const segRes = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--resolve'));
+  const marks = [segOpen, segOpen+segDev, segOpen+segDev+segClimax, segOpen+segDev+segClimax+segRes];
+  hudLeft.textContent = t < marks[0] ? 'Opening' : t < marks[1] ? 'Development' : t < marks[2] ? 'Climax' : 'Resolution';
+  // reveal staged groups
+  const groups = ['open','dev','climax','resolve'];
+  const thresholds = [0, marks[0], marks[1], marks[2]];
+  groups.forEach((g,i)=>{
+    if(t > thresholds[i])
+      $$("[data-stage='"+g+"']").forEach(el=>el.classList.add('show'));
+  });
+}
+
+// ===== Main generator =====
+const current = { palette: palettes[0], mode:'auto', cutout:true };
+
+function generate(){
+  clearLayers();
+  const txt = $('#input').value.trim();
+  if(!txt){ log('No text. Load a preset or type something.'); return; }
+  const a = analyze(txt);
+  current.analysis = a;
+  $('#kv').innerHTML = `
+    <div class='k'>Tone</div><div class='v'>${a.tone}</div>
+    <div class='k'>Theme</div><div class='v'>${a.theme}</div>
+    <div class='k'>Key Nouns</div><div class='v'>${a.keyN.join(', ')||'—'}</div>
+    <div class='k'>Key Verbs</div><div class='v'>${a.keyV.join(', ')||'—'}</div>
+  `;
+  // palette resolve
+  if($('#paletteRow .btn[aria-pressed="true"]').dataset.pid === palettes[0].id && a.palette){
+    // if user didn't pick a non-default, adopt assoc palette
+    current.palette = a.palette; applyPalette(a.palette.colors); renderSwatches(a.palette.colors); // visually reflect
+    // set pressed indicator appropriately
+    $$('#paletteRow .btn').forEach(b=>{
+      if(b.dataset.pid === (a.palette.id||'custom')) b.setAttribute('aria-pressed','true'); else b.setAttribute('aria-pressed','false');
+    });
+  }
+
+  // Map to shapes
+  const shapePlan = [];
+  const focusWords = (a.keyN.length? a.keyN : ['idea','form','word']).slice(0,4);
+  focusWords.forEach((w,i)=>{
+    shapePlan.push({word:w, shape:nounToShape(w)});
+  });
+  if(shapePlan.length===0) shapePlan.push({word:'abstract', shape:'rect'});
+
+  // Motions from verbs (fallback generic motion)
+  const motions = a.keyV.length? a.keyV.map(verbToMotion) : [{tx:80,ty:0,rot:4,scale:1},{tx:-60,ty:20,rot:-6,scale:1}];
+
+  log('Shapes: '+shapePlan.map(s=>s.shape+"("+s.word+")").join(', '));
+
+  // Build background plate
+  const bg = make('rect',{x:0,y:0,width:1600,height:900,fill:'var(--bg)'}); L.bg.appendChild(bg);
+
+  // Decorative stripes (Bass)
+  for(let i=0;i<6;i++){
+    const r = make('rect',{x:-200 + i*320, y: rand(-40,40), width: 220, height: 940, fill:'var(--accent)', opacity: 0.06});
+    L.bg.appendChild(r);
+  }
+
+  // Stage sequencing
+  const stages = ['open','dev','climax','resolve'];
+  // OPEN: primary geometric statement
+  const primary = buildPrimary(shapePlan[0]?.shape || 'rect', current.mode);
+  primary.classList.add('slide-in'); primary.dataset.stage='open';
+  primary.style.setProperty('--tx', '-80px'); primary.style.setProperty('--rot','-6deg');
+  if(current.cutout){ primary.classList.add('rough','paper-shadow'); }
+  L.mid.appendChild(primary);
+
+  // DEV: supplemental shapes
+  for(let i=1;i<shapePlan.length;i++){
+    const g = buildPrimary(shapePlan[i].shape, current.mode, i);
+    g.classList.add('slide-in'); g.dataset.stage='dev';
+    g.style.setProperty('--tx', (i%2? 100 : -120)+'px');
+    g.style.setProperty('--rot', (i%2? 8 : -7)+'deg');
+    if(current.cutout){ g.classList.add('rough','paper-shadow'); }
+    L.mid.appendChild(g);
+  }
+
+  // TEXT: concrete layout — chunk text into slates
+  const chunks = chunkText(txt, 64);
+  placeText(chunks);
+
+  // PROMPTS
+  $('#promptOut').value = buildAIPrompt(txt, current);
+  $('#kfOut').value = buildKeyframePrompt(txt, shapePlan, current);
+
+  // Ready to play
+  reset();
+  play();
+}
+
+function buildPrimary(shape='rect', mode='auto', idx=0){
+  const g = make('g',{});
+  const cx = 800 + (idx-1)*140; const cy = 460 + (idx%2? -60: 40);
+  let pathStr='';
+  if(shape==='rect'){
+    const w = 500, h=280; const r = make('rect',{x:cx-w/2,y:cy-h/2,width:w,height:h,rx:8,fill:'var(--accent)'}); g.appendChild(r);
+    // path for text
+    const id = 'rectPath'+Math.random().toString(36).slice(2);
+    const p = make('path',{id, d:`M ${cx-w/2} ${cy-h/2} H ${cx+w/2} V ${cy+h/2} H ${cx-w/2} Z`, fill:'none'}); L.text.appendChild(p);
+    textOnPath(L.text, current.analysis?.theme || 'THEME', id, 52, 900);
+  }
+  else if(shape==='circle'){
+    const r = 200; const c = make('circle',{cx, cy, r, fill:'var(--accent2)'}); g.appendChild(c);
+    const id = 'circPath'+Math.random().toString(36).slice(2);
+    const p = make('path',{id, d:`M ${cx-r} ${cy} a ${r},${r} 0 1,0 ${r*2},0 a ${r},${r} 0 1,0 ${-r*2},0`, fill:'none'}); L.text.appendChild(p);
+    textOnPath(L.text, (current.analysis?.keyN[0]||'CIRCLE'), id, 44, 800);
+  }
+  else if(shape==='triangle'){
+    const id = 'triPath'+Math.random().toString(36).slice(2);
+    const d = trianglePath(cx, cy, 360); const p = make('path',{id, d, fill:'var(--accent)'}); g.appendChild(p);
+    const edge = make('path',{id:id+'edge', d, fill:'none'}); L.text.appendChild(edge);
+    textOnPath(L.text, (current.analysis?.keyN[1]||'TRIANGLE'), id+'edge', 40, 900);
+  }
+  else if(shape==='spiral'){
+    const id='spi'+Math.random().toString(36).slice(2);
+    const d = spiralPath(cx, cy, 5, 10); const p = make('path',{id, d, stroke:'var(--accent2)', 'stroke-width':14, fill:'none'}); g.appendChild(p);
+    textOnPath(L.text, (current.analysis?.keyV[0]||'WHISPER'), id, 36, 800);
+  }
+  else if(shape==='star'){
+    const id='star'+Math.random().toString(36).slice(2);
+    const d = starPath(cx, cy, 6, 200, 80); const p = make('path',{id, d, fill:'var(--accent)'}); g.appendChild(p);
+    const edge = make('path',{id:id+'e', d, fill:'none'}); L.text.appendChild(edge);
+    textOnPath(L.text, (current.analysis?.keyN[0]||'STAR'), id+'e', 40, 900);
+  }
+  else if(shape==='lissajous'){
+    const id='lis'+Math.random().toString(36).slice(2);
+    const d = lissajousPath(cx, cy, 3,2, 320, 200, Math.PI/2); const p = make('path',{id, d, stroke:'var(--accent2)','stroke-width':12, fill:'none'}); g.appendChild(p);
+    textOnPath(L.text, (current.analysis?.keyN[0]||'VOICE'), id, 34, 900);
+  }
+  else if(shape==='grid'){
+    gridRects(g, 5, 3, 16);
+  }
+  return g;
+}
+
+function chunkText(t, max=64){
+  const words = t.trim().split(/\s+/);
+  const chunks=[], cur=[]; let len=0;
+  for(const w of words){
+    if((len + w.length) > max){ chunks.push(cur.join(' ')); cur.length=0; len=0; }
+    cur.push(w); len += w.length+1;
+  }
+  if(cur.length) chunks.push(cur.join(' '));
+  return chunks.slice(0,6); // limit
+}
+
+function placeText(chunks){
+  // Create text slates that enter sequentially
+  const y0 = 760; const gap = 40; const lefts=[80, 110, 140, 170, 200, 230];
+  chunks.forEach((c,i)=>{
+    const bg = make('rect',{x:lefts[i%lefts.length], y:y0 - i*(gap+10), width: 1200, height: 34, fill:'transparent'});
+    const tx = make('text',{x:lefts[i%lefts.length]+6, y:y0 - i*(gap+10) + 24, fill:'var(--fg)','font-size':24,'font-weight':800});
+    tx.textContent = c.toUpperCase();
+    const group = make('g', {class:'slide-in', 'data-stage': i<2? 'dev' : i<4? 'climax' : 'resolve'});
+    group.style.setProperty('--tx', i%2? '120px':'-120px');
+    group.style.setProperty('--rot', i%2? '6deg':'-5deg');
+    group.appendChild(tx);
+    L.text.appendChild(group);
+  })
+}
+
+function buildAIPrompt(txt, cur){
+  const cols = cur.palette.colors;
+  const shape = 'geometric motif derived from: '+((cur.analysis?.keyN||[]).join(', ') || 'abstract theme');
+  return `Create a Saul Bass–inspired title sequence featuring: ${txt.slice(0,160)}... Use bold geometric shapes, limited color palette of ${cols.join(' / ')}, bold minimalist typography, and a paper cutout aesthetic. Animate text emerging from / forming ${shape} with linear movements, rotations, and scale. Include John Whitney–style geometric precision (spirals/Lissajous). Duration approx ${totalDur}s.`;
+}
+
+function buildKeyframePrompt(txt, plan, cur){
+  const baseShape = plan[0]?.shape || 'rectangle';
+  const cols = cur.palette.colors.join(', ');
+  return `Generate keyframe animation instructions for: ${txt.slice(0,120)}...
+- Base shape: ${baseShape}
+- Color scheme: ${cols}
+- Typography: Bold sans-serif, large, high contrast
+- Movement: Linear paths, rotation, scaling, staggered entry
+- Duration: ${totalDur}s (Opening ${getComputedStyle(document.documentElement).getPropertyValue('--open')}, Development ${getComputedStyle(document.documentElement).getPropertyValue('--develop')}, Climax ${getComputedStyle(document.documentElement).getPropertyValue('--climax')}, Resolution ${getComputedStyle(document.documentElement).getPropertyValue('--resolve')})
+- Elements enter sequentially every ~1.5s.`;
+}
+
+// ===== Export =====
+function exportSVG(){
+  const s = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([s], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  download(url, 'visual-poetry.svg');
+}
+
+function exportPNG(){
+  const s = new XMLSerializer().serializeToString(svg);
+  const img = new Image();
+  const svgBlob = new Blob([s], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(svgBlob);
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width=1600; c.height=900;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+    ctx.fillRect(0,0,c.width,c.height);
+    ctx.drawImage(img,0,0);
+    URL.revokeObjectURL(url);
+    c.toBlob(b=>download(URL.createObjectURL(b), 'visual-poetry.png'));
+  };
+  img.src = url;
+}
+
+function download(url, name){
+  const a = document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); requestAnimationFrame(()=>{ URL.revokeObjectURL(url); a.remove(); });
+}
+
+// ===== Presets & Notes =====
+const PRESET_NIGHT = `The night sky whispers secrets`; 
+const PRESET_PTAH = `Ptah creates by heart and tongue: thought conceives; speech names; the world forms in Memphis.`;
+const PRESET_EGYPT = `From Hwt-ka-Ptah to Aigyptos: a temple name becomes a nation; black land against red desert.`;
+
+function mountNotes(){
+  $('#ptahNote').textContent = `Shabaka Stone (c. 716–702 BCE): Memphite Theology elevates Ptah as creator through heart (mind) and tongue (speech). Creation as thought-and-word, uniting Egypt under Memphis. Useful motifs: temple rectangles, speaking spirals, Lissajous for voice, dual rectangles for Upper/Lower Egypt.`;
+  $('#egyptNote').textContent = `Etymology of “Egypt”: Kemet (Black Land) ⇢ Hwt‑ka‑Ptah (House of the Ka of Ptah) ⇢ Greek Aigyptos ⇢ Latin Aegyptus ⇢ French Egypte ⇢ English Egypt; parallel Semitic line: Mizraim ⇢ Arabic Misr. Motifs: black/red land blocks, river band, temple glyphs, grid‑city.`;
+}
+
+// ===== Wire up UI =====
+function init(){
+  mountPalettes();
+  mountNotes();
+  renderSwatches(palettes[0].colors);
+  applyPalette(palettes[0].colors);
+  setDur(+$('#dur').value);
+
+  $('#dur').addEventListener('input', e=>{ totalDur = +e.target.value; setDur(totalDur); })
+  $('#generate').addEventListener('click', generate);
+  $('#play').addEventListener('click', play);
+  $('#pause').addEventListener('click', pause);
+  $('#reset').addEventListener('click', reset);
+  $('#export-svg').addEventListener('click', exportSVG);
+  $('#export-png').addEventListener('click', exportPNG);
+
+  $('#preset-night').addEventListener('click', ()=>{ $('#input').value = PRESET_NIGHT; })
+  $('#preset-ptah').addEventListener('click', ()=>{ $('#input').value = PRESET_PTAH; })
+  $('#preset-egypt').addEventListener('click', ()=>{ $('#input').value = PRESET_EGYPT; })
+
+  // Mode toggles
+  $('#mode-auto').addEventListener('click', ()=>{ current.mode='auto'; press('#mode-auto') })
+  $('#mode-bass').addEventListener('click', ()=>{ current.mode='bass'; press('#mode-bass') })
+  $('#mode-whitney').addEventListener('click', ()=>{ current.mode='whitney'; press('#mode-whitney') })
+
+  // Cutout toggle
+  $('#cutout-on').addEventListener('click', ()=>{ current.cutout=true; press('#cutout-on', '#cutout-off') })
+  $('#cutout-off').addEventListener('click', ()=>{ current.cutout=false; press('#cutout-off', '#cutout-on') })
+
+  // Seed with an example
+  $('#input').value = PRESET_NIGHT;
+  generate();
+}
+
+function press(onSel, offSel1, offSel2){
+  $$(".btn[aria-pressed]").forEach(b=> b.matches(onSel)? b.setAttribute('aria-pressed','true') : (b.matches(offSel1||'')||b.matches(offSel2||'')) && b.setAttribute('aria-pressed','false'));
+}
+
+// (Optional) mode-specific differences could be added here in future
+
+window.addEventListener('load', init);
+</script>
+
+<!-- Hidden long-form source texts (available for copy/paste) -->
+<template id="ptahFull">
+# Deep Reading of Ptah and the Shabaka Stone
+[Full essay omitted in UI to keep file focused; use the preset to generate visuals.]
+</template>
+<template id="egyptFull">
+# Detailed Etymology and History of Egypt: From Hieroglyphs to Modern Names
+[Full essay omitted in UI to keep file focused; use the preset to generate visuals.]
+</template>
+
+</body>
+</html>

@@ -188,7 +188,7 @@
   .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 4px; line-height: 1.5; } /* Re-added for the original subtitle */
 
   /* Cards & lists */
-  .grid { display:grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .grid { display:grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
   .two { grid-template-columns: repeat(2, minmax(0,1fr)); }
   @media (max-width: 560px){ .two{ grid-template-columns: 1fr; } }
 
@@ -202,7 +202,6 @@
     position: relative; /* For the delete button positioning */
     display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
     padding: 16px;
-    aspect-ratio: 1 / 1; /* Ensures square aspect ratio, consistent with 𓉗 container */
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px; text-decoration: none; color: var(--text);
@@ -215,13 +214,14 @@
     border-color: var(--accent); /* Accent color on hover */
   }
   .deck-card .icon {
-    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    border-radius: 10px; display: grid; place-items: center;
     font-weight: 800; letter-spacing: .03em;
     font-family: 'IBM Plex Mono', monospace; /* Use the new monospace font for icons */
-    color: var(--card); /* Text color inside icon, contrasting with gradient */
-    font-size: 20px; /* Size for hieroglyph/initials to fit 40px container */
-    line-height: 1; /* Ensure single line height for symbols */
-    aspect-ratio: 1 / 1; /* Ensure icon container is also square */
+  }
+  /* Enforce 4:3 standard thumbnail size for presentation tiles */
+  .deck-card .icon.presentation {
+    width: 100%; max-width: 180px; aspect-ratio: 4 / 3; height: auto;
+    font-size: clamp(20px, 6vw, 56px);
   }
   /* Original presentation icon gradient, adapted to new accent variable */
   .icon.presentation { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black)); }
@@ -405,9 +405,7 @@
         gap: 8px;
         border-radius: 12px;
       }
-      .deck-card .icon {
-        width: 32px; height: 32px; border-radius: 8px; font-size: 1.1em;
-      }
+      .deck-card .icon.presentation { width: 100%; max-width: 140px; aspect-ratio: 4 / 3; height: auto; border-radius: 8px; font-size: clamp(18px, 6vw, 42px); }
       .deck-card h3 { font-size: 13px; }
       .deck-card p { font-size: 11px; }
 
@@ -454,6 +452,7 @@
 
         <div class="toolbar">
             <button class="btn" id="addNewDeckBtn">Add New Deck</button>
+            <button class="btn" id="createProgramBtn">Create Program</button>
         </div>
 
         <div class="grid" id="deckGrid">
@@ -461,6 +460,8 @@
         </div>
         <!-- Context menu for deck cards -->
         <div id="deckContextMenu" class="context-menu" role="menu" aria-hidden="true">
+          <div class="item" id="ctxOpenInWindow" role="menuitem">Open in Window</div>
+          <div class="sep" aria-hidden="true"></div>
           <div class="item" id="ctxEdit" role="menuitem">Edit…</div>
           <div class="sep" aria-hidden="true"></div>
           <div class="item" id="ctxCopyLink" role="menuitem">Copy Link</div>
@@ -488,6 +489,12 @@
             <h4>Decks</h4>
             <div id="launcherDecks">
               <!-- Decks will be injected here by JS -->
+            </div>
+          </div>
+          <div class="launcher-col">
+            <h4>Programs</h4>
+            <div id="launcherPrograms">
+              <!-- Programs will be injected here by JS -->
             </div>
           </div>
           <div class="launcher-col">
@@ -522,6 +529,31 @@
       </div>
     </div>
 
+    <!-- Create Program Modal -->
+    <div id="programModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="programModalTitle">
+        <h3 id="programModalTitle">Create Myth Program</h3>
+        <p class="subtitle" style="margin-top:-6px">Select and order presentations to play as a seamless program.</p>
+        <label for="programName" class="sr-only">Program Name</label>
+        <input id="programName" type="text" placeholder="Program name (e.g., Opening Night)" style="width:100%; margin:6px 0 10px 0" />
+        <div id="programList" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow:auto"></div>
+        <div style="margin-top:10px">
+          <h4 style="margin:0 0 6px 0">Saved Programs</h4>
+          <div id="savedPrograms" style="display:flex; flex-direction:column; gap:6px; max-height:24vh; overflow:auto"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" id="cancelProgram">Cancel</button>
+          <button class="btn" id="saveProgramBtn">Save Program</button>
+          <button class="btn accent" id="playProgramBtn">Play Program</button>
+          <button class="btn" id="exportProgramJsonBtn" title="Download a .json manifest of this program">Export JSON</button>
+          <button class="btn" id="importProgramJsonBtn" title="Load a .json manifest into the selector">Import JSON</button>
+          <button class="btn" id="exportProgramHtmlBtn" title="Copy a bundling command using bundle_program.py">Export HTML</button>
+        </div>
+      </div>
+    </div>
+    <!-- Hidden file input for program import -->
+    <input type="file" id="programImportFile" accept="application/json" style="display:none" />
+
   </div>
 
   <script>
@@ -550,6 +582,10 @@
       { href: 'barthes_world_of_wrestling_saul_bass_concrete_poetry_deck.html', title: 'Saul Bass Concrete Poetry' },
       { href: 'barthes_world_of_wrestling_saul_bass_concrete_poetry_deck (1).html', title: 'Saul Bass Concrete Poetry (copy)' },
       { href: 'myth_engines_saul_bass_whitney_deck_single_file.html', title: 'Myth Engines — Saul Bass + Whitney' },
+      { href: 'saul_bass_visual_poetry_engine_egypt_edition_single_file.html', title: 'Saul Bass Visual Poetry — Egypt Edition' },
+      { href: 'death-of-author.html', title: 'Death of the Author — Roland Barthes' },
+      { href: 'plo_t_tug_of_war_deck_live.html', title: 'PLoT — Tug‑of‑War (Live Deck)' },
+      { href: 'shabakh-pres.html', title: 'Shabaka Stone — Memphite Theology' },
       { href: 'kayfabe_presentation.html', title: 'Kayfabe Presentation' },
       { href: 'prop-00.html', title: 'Prop 00' },
       { href: 'nomad_vs_state_smooth_striated_grid_abm_mobile_single_file (2).html', title: 'Nomad vs State — Smooth/Striated (mobile)' },
@@ -662,6 +698,7 @@
     // CONTEXT MENU (deck cards)
     // ==========================
     const $ctxMenu = document.getElementById('deckContextMenu');
+    const $ctxOpenInWindow = document.getElementById('ctxOpenInWindow');
     const $ctxEdit = document.getElementById('ctxEdit');
     const $ctxCopyLink = document.getElementById('ctxCopyLink');
     const $ctxCopyTitle = document.getElementById('ctxCopyTitle');
@@ -785,6 +822,13 @@
       const deck = getDeckById(currentCtxDeckId);
       if (!deck) return hideContextMenu();
       await copyToClipboard(deck.title);
+      hideContextMenu();
+    });
+
+    $ctxOpenInWindow?.addEventListener('click', () => {
+      const deck = getDeckById(currentCtxDeckId);
+      if (!deck) return hideContextMenu();
+      openDeckInWindow(deck.href, deck.title);
       hideContextMenu();
     });
 
@@ -949,12 +993,298 @@
     });
 
     // ==========================
+    // PROGRAM (Playlist) CREATION & PLAYER
+    // ==========================
+    const $programModal = document.getElementById('programModal');
+    const $programList = document.getElementById('programList');
+    const $createProgramBtn = document.getElementById('createProgramBtn');
+    const $cancelProgram = document.getElementById('cancelProgram');
+    const $playProgramBtn = document.getElementById('playProgramBtn');
+    const $saveProgramBtn = document.getElementById('saveProgramBtn');
+    const $exportProgramJsonBtn = document.getElementById('exportProgramJsonBtn');
+    const $importProgramJsonBtn = document.getElementById('importProgramJsonBtn');
+    const $exportProgramHtmlBtn = document.getElementById('exportProgramHtmlBtn');
+    const $programName = document.getElementById('programName');
+    const $savedPrograms = document.getElementById('savedPrograms');
+    const $programImportFile = document.getElementById('programImportFile');
+
+    const PROGRAMS_KEY = 'mythos_programs';
+
+    function loadSavedPrograms(){
+      try { return JSON.parse(localStorage.getItem(PROGRAMS_KEY)) || []; } catch { return []; }
+    }
+    function persistSavedPrograms(list){
+      localStorage.setItem(PROGRAMS_KEY, JSON.stringify(list));
+    }
+    function renderSavedPrograms(){
+      const list = loadSavedPrograms();
+      if (!$savedPrograms) return;
+      if (!list.length){
+        $savedPrograms.innerHTML = '<div class="meta">No saved programs yet.</div>';
+        return;
+      }
+      $savedPrograms.innerHTML = list.map(p => `
+        <div class="launcher-item" data-name="${cleanHtml(p.name)}" style="align-items:center">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong>${cleanHtml(p.name)}</strong>
+            <span class="meta" style="opacity:.8">(${p.items.length} decks)</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="icon-btn load">Load</button>
+            <button class="icon-btn play">Play</button>
+            <button class="icon-btn danger delete">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+      $savedPrograms.querySelectorAll('.launcher-item').forEach(row => {
+        const name = row.dataset.name;
+        row.querySelector('.load').addEventListener('click', ()=>{
+          const progs = loadSavedPrograms();
+          const p = progs.find(x=>x.name===name);
+          if(!p) return;
+          // mark selection and order
+          const hrefOrder = p.items.map(i=>i.href);
+          // select flags
+          DECK_DATA.forEach(d => d._selected = hrefOrder.includes(d.href));
+          // reorder DECK_DATA to match program order first, keep others after
+          const selected = hrefOrder.map(h => DECK_DATA.find(d=>d.href===h)).filter(Boolean);
+          const unselected = DECK_DATA.filter(d => !hrefOrder.includes(d.href));
+          DECK_DATA = selected.concat(unselected);
+          renderProgramList();
+          if ($programName) $programName.value = p.name;
+        });
+        row.querySelector('.play').addEventListener('click', ()=>{
+          const progs = loadSavedPrograms();
+          const p = progs.find(x=>x.name===name);
+          if(!p) return;
+          hideProgramModal();
+          openProgramWindow(p.items);
+        });
+        row.querySelector('.delete').addEventListener('click', ()=>{
+          const progs = loadSavedPrograms().filter(x=>x.name!==name);
+          persistSavedPrograms(progs);
+          renderSavedPrograms();
+        });
+      });
+    }
+
+    function showProgramModal(){
+      renderProgramList();
+      renderSavedPrograms();
+      if ($programName) $programName.value = '';
+      $programModal.style.display = 'flex';
+    }
+    function hideProgramModal(){
+      $programModal.style.display = 'none';
+    }
+
+    function renderProgramList(){
+      // Build a selectable list of decks with Up/Down controls
+      $programList.innerHTML = DECK_DATA.map(d => `
+        <div class="launcher-item" data-id="${d.id}" style="align-items:center">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" class="sel" style="margin-right:6px" ${d._selected? 'checked': ''} />
+            <div class="icon presentation" style="width:24px; height:24px; font-size:10px; border-radius:6px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black));">${cleanHtml(d.icon)}</div>
+            <span>${cleanHtml(d.title)}</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="icon-btn up">↑</button>
+            <button class="icon-btn down">↓</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Wire selection and ordering
+      $programList.querySelectorAll('.launcher-item').forEach(row => {
+        const id = row.dataset.id;
+        row.querySelector('.sel').addEventListener('change', (e)=>{
+          const d = DECK_DATA.find(x=>x.id===id);
+          d._selected = e.target.checked;
+        });
+        row.querySelector('.up').addEventListener('click', ()=> moveDeck(id, -1));
+        row.querySelector('.down').addEventListener('click', ()=> moveDeck(id, +1));
+      });
+    }
+
+    function moveDeck(id, dir){
+      const idx = DECK_DATA.findIndex(d => d.id===id);
+      const j = idx + dir;
+      if (idx < 0 || j < 0 || j >= DECK_DATA.length) return;
+      const [item] = DECK_DATA.splice(idx,1);
+      DECK_DATA.splice(j,0,item);
+      renderProgramList();
+    }
+
+    function getSelectedProgram(){
+      return DECK_DATA.filter(d => d._selected).map(d => ({ href: d.href, title: d.title }));
+    }
+
+    $createProgramBtn.addEventListener('click', showProgramModal);
+    $cancelProgram.addEventListener('click', hideProgramModal);
+    $programModal.addEventListener('click', (e)=>{ if(e.target=== $programModal) hideProgramModal(); });
+
+    $playProgramBtn.addEventListener('click', ()=>{
+      const program = getSelectedProgram();
+      if (!program.length){ alert('Select at least one presentation.'); return; }
+      hideProgramModal();
+      openProgramWindow(program);
+    });
+
+    $saveProgramBtn.addEventListener('click', ()=>{
+      const program = getSelectedProgram();
+      const name = ($programName?.value || '').trim();
+      if (!program.length){ alert('Select at least one presentation.'); return; }
+      if (!name){ alert('Enter a program name.'); return; }
+      const progs = loadSavedPrograms();
+      const existingIdx = progs.findIndex(p=>p.name===name);
+      const entry = { name, items: program };
+      if (existingIdx >= 0) progs[existingIdx] = entry; else progs.push(entry);
+      persistSavedPrograms(progs);
+      renderSavedPrograms();
+    });
+
+    // -------- Program Export (JSON)
+    function downloadFile(filename, text, type='application/octet-stream'){
+      const blob = new Blob([text], {type});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+    }
+
+    function slug(s){
+      return (s || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'program';
+    }
+
+    $exportProgramJsonBtn?.addEventListener('click', ()=>{
+      const items = getSelectedProgram();
+      if (!items.length){ alert('Select at least one presentation.'); return; }
+      const name = ($programName?.value || 'Program').trim();
+      const payload = { name, items };
+      downloadFile(slug(name)+'.mythprog.json', JSON.stringify(payload, null, 2), 'application/json');
+    });
+
+    // -------- Program Import (JSON)
+    $importProgramJsonBtn?.addEventListener('click', ()=>{ $programImportFile?.click(); });
+    $programImportFile?.addEventListener('change', (e)=>{
+      const file = e.target.files?.[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          const data = JSON.parse(String(reader.result||'{}'));
+          const name = data.name || file.name.replace(/\.(json|mythprog\.json)$/i,'');
+          const hrefOrder = (data.items||[]).map(i=>i.href).filter(Boolean);
+          if(!hrefOrder.length){ alert('Invalid program file: no items.'); return; }
+          // select + order
+          DECK_DATA.forEach(d => d._selected = hrefOrder.includes(d.href));
+          const selected = hrefOrder.map(h => DECK_DATA.find(d=>d.href===h)).filter(Boolean);
+          const unselected = DECK_DATA.filter(d => !hrefOrder.includes(d.href));
+          DECK_DATA = selected.concat(unselected);
+          renderProgramList();
+          if ($programName) $programName.value = name;
+        }catch(err){
+          console.error(err);
+          alert('Failed to parse program file.');
+        }
+      };
+      reader.readAsText(file);
+      // reset input so same file can be re-imported
+      e.target.value = '';
+    });
+
+    // -------- Program Export (HTML via helper)
+    $exportProgramHtmlBtn?.addEventListener('click', ()=>{
+      const items = getSelectedProgram();
+      if (!items.length){ alert('Select at least one presentation.'); return; }
+      const name = slug(($programName?.value || 'program').trim()) + '.html';
+      const args = items.map(i=> i.href.replace(/\s/g, '\\ ')).join(' ');
+      const cmd = `python3 bundle_program.py -o ${name} ${args}`;
+      copyToClipboard(cmd).then(()=>{
+        alert('Bundling command copied to clipboard:\n\n'+cmd+"\n\nRun this in WORLD OF WRESTLING/ to produce a single-file HTML.");
+      });
+    });
+
+    function openProgramWindow(program){
+      ensureLayers();
+      const layer = document.getElementById('osLayer');
+      const id = 'prog_'+Math.random().toString(36).slice(2,8);
+      const win = document.createElement('div');
+      win.className = 'os-window max';
+      win.id = id;
+      win.style.left = '0px';
+      win.style.top = '48px';
+      win.style.zIndex = (++zCounter).toString();
+
+      win.innerHTML = `
+        <div class="os-titlebar">
+          <div class="window-dots">
+            <span class="dot red" data-act="close"></span>
+            <span class="dot yellow" data-act="min"></span>
+            <span class="dot green" data-act="max"></span>
+          </div>
+          <div class="title">Myth Program</div>
+        </div>
+        <div class="os-content" style="position:absolute; inset:38px 0 0 0; display:grid; grid-template-rows: 1fr auto;">
+          <div id="progStage" style="position:relative; overflow:hidden;">
+            <iframe id="progFrame" src="about:blank" title="Program Player" style="width:100%; height:100%; border:0; background:var(--card); opacity:0; transition: opacity .25s ease;"></iframe>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border-top:1px solid var(--border); background: var(--bg-elev);">
+            <div class="meta" id="progCounter">1 / ${program.length}</div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn" id="progPrev">◀ Prev</button>
+              <button class="btn accent" id="progNext">Next ▶</button>
+            </div>
+          </div>
+        </div>`;
+      layer.appendChild(win);
+
+      const titlebar = win.querySelector('.os-titlebar');
+      makeDraggable(win, titlebar);
+      titlebar.addEventListener('click',(e)=>{
+        const btn = e.target.closest('.dot');
+        if(!btn) return; const act = btn.dataset.act;
+        if(act==='close'){ win.remove(); }
+        if(act==='min'){ win.style.display='none'; addDockItem(id, 'Myth Program'); }
+        if(act==='max'){ win.classList.toggle('max'); }
+      });
+
+      // Player controls
+      const $frame = win.querySelector('#progFrame');
+      const $counter = win.querySelector('#progCounter');
+      const $prev = win.querySelector('#progPrev');
+      const $next = win.querySelector('#progNext');
+      let idx = 0;
+
+      function updateCounter(){ $counter.textContent = (idx+1) + ' / ' + program.length; }
+      function show(i){
+        idx = Math.max(0, Math.min(program.length-1, i));
+        updateCounter();
+        // fade out, swap, fade in
+        $frame.style.opacity = '0';
+        setTimeout(()=>{ $frame.src = program[idx].href; }, 150);
+        // Wait a moment after load to fade in
+      }
+      $frame.addEventListener('load', ()=>{ setTimeout(()=>{ $frame.style.opacity = '1'; }, 100); });
+      $prev.addEventListener('click', ()=> show(idx-1));
+      $next.addEventListener('click', ()=> show(idx+1));
+      window.addEventListener('keydown', (e)=>{
+        if (win.isConnected===false) return; // window closed
+        if (e.key === 'ArrowLeft') { e.preventDefault(); show(idx-1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); show(idx+1); }
+      });
+
+      show(0);
+      return id;
+    }
+    // ==========================
     // LAUNCHER (Adapted from LMC 2400)
     // ==========================
     const $launcher = document.getElementById('launcher');
     const $launcherSearch = document.getElementById('launcherSearch');
     const $launcherClose = document.getElementById('launcherClose');
     const $launcherDecks = document.getElementById('launcherDecks');
+    const $launcherPrograms = document.getElementById('launcherPrograms');
     const $launcherTrigger = document.getElementById('launcherTrigger'); // The 𓉗 icon in the titlebar
 
     function renderLauncherDecks(filter = '') {
@@ -976,10 +1306,32 @@
         `).join('');
     }
 
+    function renderLauncherPrograms(filter = ''){
+      if (!$launcherPrograms) return;
+      const list = loadSavedPrograms();
+      const f = filter.toLowerCase();
+      if (!list.length){
+        $launcherPrograms.innerHTML = '<div class="meta">No programs yet</div>';
+        return;
+      }
+      $launcherPrograms.innerHTML = list
+        .filter(p => p.name.toLowerCase().includes(f) || p.items.some(i=>i.title?.toLowerCase().includes(f)))
+        .map(p => `
+          <div class="launcher-item" data-progname="${cleanHtml(p.name)}">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong>${cleanHtml(p.name)}</strong>
+              <span class="meta" style="opacity:.8">(${p.items.length})</span>
+            </div>
+            <span class="badge">Program</span>
+          </div>
+        `).join('');
+    }
+
     function showLauncher() {
       $launcher.style.display = 'flex';
       $launcherSearch.value = '';
-      renderLauncherDecks(); // Render all decks initially
+      renderLauncherDecks();
+      renderLauncherPrograms();
       setTimeout(()=> $launcherSearch.focus(), 0);
     }
 
@@ -992,12 +1344,13 @@
 
     $launcherSearch.addEventListener('input', (e) => {
       renderLauncherDecks(e.target.value);
+      renderLauncherPrograms(e.target.value);
     });
 
     $launcherSearch.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault(); // Prevent form submission if any
-        const firstMatch = $launcherDecks.querySelector('.launcher-item');
+        const firstMatch = ($launcherDecks.querySelector('.launcher-item') || $launcherPrograms.querySelector('.launcher-item'));
         if (firstMatch) {
           firstMatch.click(); // Simulate click on the first item
         }
@@ -1015,6 +1368,17 @@
       }
     });
 
+    // Delegate click for launcher programs to play the program
+    $launcherPrograms.addEventListener('click', (e) => {
+      const item = e.target.closest('.launcher-item');
+      if (!item) return;
+      const name = item.dataset.progname;
+      const p = loadSavedPrograms().find(x=>x.name===name);
+      if (!p) return;
+      hideLauncher();
+      openProgramWindow(p.items);
+    });
+
     // Keyboard shortcuts for launcher
     document.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -1024,6 +1388,7 @@
       if (e.key === 'Escape') {
         hideLauncher();
         hideAddDeckModal(); // Also close add deck modal
+        hideProgramModal();
       }
     });
 

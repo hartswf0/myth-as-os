@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Death of the Author — Roland Barthes</title>
+  <meta name="description" content="Presentation on Roland Barthes' The Death of the Author" />
+  <style>
+    :root{
+      --bg:#0e0e10; --panel:#151518; --text:#eee; --muted:#9aa0a6; --accent:#f05a4f; --border:#2a2a2e;
+    }
+    /* Light */
+    .theme-light{ --bg:#f7f7f8; --panel:#ffffff; --text:#1a1a1d; --muted:#5c5f66; --accent:#be3a30; --border:#e6e7ea; }
+    /* Newspaper */
+    .theme-news{ --bg:#f5f1e8; --panel:#fbf8f1; --text:#1d1b16; --muted:#6e6656; --accent:#7c3f00; --border:#e6dcc5; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; background:var(--bg); color:var(--text); font:18px/1.6 Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial}
+
+    .wrap{position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr auto}
+    header, footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; border-bottom:1px solid var(--border); background:color-mix(in srgb, var(--panel) 80%, transparent); backdrop-filter: blur(6px)}
+    footer{border-top:1px solid var(--border); border-bottom:0}
+
+    .title{font-weight:700; letter-spacing:.02em}
+    .controls{display:flex; gap:8px}
+    button{appearance:none; border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:10px; padding:8px 12px; cursor:pointer}
+    button:hover{border-color:var(--accent)}
+
+    /* Stage keeps 4:3, centers, and scales responsively */
+    .stage{display:grid; place-items:center; padding:8px}
+    .slide{
+      width:min(1200px, 90vw);
+      aspect-ratio:4/3; border-radius:16px;
+      background:radial-gradient(40% 60% at 50% 35%, color-mix(in srgb, var(--panel) 85%, white), var(--panel) 70%);
+      border:1px solid var(--border); box-shadow:0 12px 36px rgba(0,0,0,.25);
+      display:grid; grid-template-rows:auto 1fr auto; padding:24px; overflow:hidden
+    }
+    .slide h1,.slide h2{margin:0 0 10px; line-height:1.15}
+    .slide h1{font-size:clamp(26px,3.6vw,40px)}
+    .slide h2{font-size:clamp(20px,3vw,30px); color:color-mix(in srgb, var(--accent) 55%, var(--text))}
+    .quote{font-style:italic; color:var(--text); background:color-mix(in srgb, var(--panel) 85%, var(--accent) 10%); border:1px dashed color-mix(in srgb, var(--accent) 35%, var(--border)); padding:14px; border-radius:12px; font-size:clamp(16px,2.2vw,20px)}
+    .mainpoints{margin:16px 0; padding-left:22px; font-size:clamp(16px,2vw,19px)}
+    .mainpoints li{margin:8px 0}
+    .dq{margin-top:10px; padding:12px; border-radius:12px; background:color-mix(in srgb, var(--panel) 92%, var(--bg)); color:var(--text); border:1px solid var(--border)}
+    .kicker{color:var(--muted); font-size:0.9rem}
+
+    .pager{display:flex; gap:8px; align-items:center}
+    .counter{color:var(--muted); font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); opacity:.9}
+
+    /* Small screens */
+    @media (max-width:640px){ .slide{padding:18px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">Death of the Author — Roland Barthes</div>
+      <div class="controls">
+        <select id="theme" title="Theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="news">Newspaper</option>
+        </select>
+        <button id="prev" aria-label="Previous slide">◀ Prev</button>
+        <button id="next" class="accent" aria-label="Next slide">Next ▶</button>
+        <span class="counter" id="counter">1 / 7</span>
+      </div>
+    </header>
+
+    <main class="stage">
+      <!-- Slides container -->
+      <section id="slides"></section>
+    </main>
+
+    <footer>
+      <div class="kicker">Keys: ← / → or Space to navigate • Esc to exit full-screen</div>
+      <div class="pager"><span class="dot"></span></div>
+    </footer>
+  </div>
+
+  <script>
+    const slidesData = [
+      {
+        title: 'Slide 1: The Text as Multi-Dimensional Space',
+        quote: `“We know that a text does not consist of a line of words, releasing a single ‘theological’ meaning (the ‘message’ of the Author-God), but is a space of many dimensions, in which are wedded and contested various kinds of writing, no one of which is original: the text is a tissue of citations, resulting from the thousand sources of culture.” — Roland Barthes, The Death of the Author (Image–Music–Text, 1977), p. 148`,
+        points: [
+          'A text is inherently intertextual, composed of countless prior writings.',
+          'No singular “authorial message”: meaning emerges from the interplay of diverse voices.',
+          'The author is decentered; the text itself is a tissue of citations.'
+        ],
+        question: 'How does conceiving a text as a “space of many dimensions” challenge traditional notions of authorial intent, and what implications does this have for literary interpretation?',
+        image: { src: 'slide1-collage.png', mode: 'overlay', opacity: 0.18, position: 'center' }
+      },
+      {
+        title: 'Slide 2: The Author’s Power as Mixer',
+        quote: `“Like Bouvard and Pécuchet… his only power is to combine the different kinds of writing, to oppose some by others, so as never to sustain himself by just one of them; if he wants to express himself, at least he should know that the internal ‘thing’ he claims to ‘translate’ is itself only a readymade dictionary whose words can be explained (defined) only by other words, and so on ad infinitum…” — Roland Barthes, The Death of the Author (Image–Music–Text, 1977), pp. 148–149`,
+        points: [
+          'Writers as mixers, not originators—creativity consists in juxtaposition.',
+          'Meaning is deferred indefinitely: each term defined by other terms.',
+          'Transparency of sources: acknowledge intertextual debts.'
+        ],
+        question: 'In what ways does the metaphor of the author as a “mixer” of preexisting texts redefine creativity, and how might this view affect our evaluation of originality in writing?',
+        image: { src: 'slide2-mixer.png', mode: 'side', position: 'right' }
+      },
+      {
+        title: 'Slide 3: Narrative Responsibility in Ethnographic Societies',
+        quote: `“Nevertheless, the feeling about this phenomenon has been variable; in primitive societies, narrative is never undertaken by a person, but by a mediator, shaman or speaker, whose ‘performance’ may be admired (that is, his mastery of the narrative code), but not his ‘genius.’ The author is a modern figure…” — Roland Barthes, The Death of the Author (Image–Music–Text, 1977), p. 143`,
+        points: [
+          'Narrative as performance valued for skill, not personal genius.',
+          'Collective cultural ownership of stories rather than individual authorship.',
+          'The author-figure is a modern invention.'
+        ],
+        question: 'What does the role of the mediator or shaman in “primitive societies” reveal about collective versus individual ownership of stories, and how does this compare to modern literary culture?',
+        image: { src: 'slide3-shaman.png', mode: 'front', caption: 'Mediator / Shaman as narrative performer' }
+      },
+      {
+        title: 'Slide 4: The Scriptor as Dictionary',
+        quote: `“Succeeding the Author, the writer no longer contains within himself passions, humors, sentiments, impressions, but that enormous dictionary, from which he derives a writing which can know no end or halt: life can only imitate the book, and the book itself is only a tissue of signs, a lost, infinitely remote imitation.” — Roland Barthes, The Death of the Author (Image–Music–Text, 1977), p. 149`,
+        points: [
+          'The scriptor is a conduit for an “enormous dictionary” of cultural signifiers.',
+          'Writing is endless—no singular origin, no final resting point.',
+          'Books are networks of signs, not vessels of inner sentiment.'
+        ],
+        question: 'How does Barthes’s conception of the scriptor as an “enormous dictionary” reconfigure our understanding of authorial identity and the process of textual production?',
+        image: { src: 'slide4-dictionary.png', mode: 'side', position: 'left' }
+      },
+      {
+        title: 'Slide 5: Explanation in the Person Behind the Work',
+        quote: `“The explanation of the work is always sought in the man who has produced it, as if, through the more or less transparent allegory of fiction, it was always finally the voice of one and the same person, the author, which delivered his ‘confidence.’” — Roland Barthes, The Death of the Author (Image–Music–Text, 1977), p. 143`,
+        points: [
+          'Critics seek biographical explanations, projecting the author’s “confidence.”',
+          'This approach reduces the text to an allegory of authorial intent.',
+          'Masks the autonomy and polyvocality of the text itself.'
+        ],
+        question: 'Why might readers and critics instinctively seek biographical explanations for a text, and what are the risks of privileging authorial “confidence” over textual autonomy?',
+        image: { src: 'slide5-portrait.png', mode: 'background', opacity: 0.15 }
+      },
+      {
+        title: 'Slide 6: Multiplicity Focused in the Reader',
+        quote: `“We know that a text consists of multiple writings, issuing from several cultures and entering into dialogue with each other, into parody, into contestation; but there is one place where this multiplicity is collected, united, and this place is not the author, as we have hitherto said it was, but the reader…” — Roland Barthes, The Death of the Author (Image–Music–Text, 1977), p. 151`,
+        points: [
+          'The reader is the site where diverse cultural writings converge.',
+          'Meaning emerges through reader engagement, not authorial control.',
+          'Shifts interpretive authority to the audience.'
+        ],
+        question: 'In shifting the locus of textual unity from author to reader, how does Barthes empower the act of reading, and what challenges does this pose for authority in literary criticism?',
+        image: { src: 'slide6-audience.png', mode: 'side', position: 'right' }
+      },
+      {
+        title: 'Slide 7: The Reader as Inscription Space',
+        quote: `“The reader is the very space in which are inscribed, without any of them being lost, all the citations a writing consists of; the unity of a text is not in its origin, it is in its destination…” — Roland Barthes, The Death of the Author (Image–Music–Text, 1977), p. 151`,
+        points: [
+          'The reader preserves all citations, ensuring no voices vanish.',
+          'Textual unity resides in reception, not production.',
+          'Emphasizes the destination over the origin.'
+        ],
+        question: 'What does it mean to regard the reader as the “space” of inscription for all textual citations, and how might this view transform collaborative annotation or reader-response practices?',
+        image: { src: 'slide7-marginalia.png', mode: 'overlay', opacity: 0.2 }
+      }
+    ];
+
+    // Render slides
+    const $slides = document.getElementById('slides');
+    function slideBodyHTML(s){
+      const textBlock = `
+        <div>
+          <div class=\"quote\">${s.quote}</div>
+          <ul class=\"mainpoints\">${s.points.map(p=>`<li>${p}</li>`).join('')}</ul>
+          <div class=\"dq\"><strong>Discussion:</strong> ${s.question}</div>
+        </div>`;
+
+      const img = s.image || null;
+      if(!img) return textBlock;
+
+      // Build different layouts
+      if(img.mode === 'background'){
+        return `
+          <div style=\"position:relative;\">
+            <img src=\"${img.src}\" alt=\"\" style=\"position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:${img.opacity ?? .12}; filter:saturate(0.9) contrast(1.05);\" />
+            <div style=\"position:relative\">${textBlock}</div>
+          </div>`;
+      }
+      if(img.mode === 'overlay'){
+        return `
+          <div style=\"position:relative;\">
+            <div style=\"position:absolute; inset:0; background:url('${img.src}') center/${img.cover || 'cover'} no-repeat; opacity:${img.opacity ?? .18}; filter:saturate(0.9) contrast(1.05);\"></div>
+            <div style=\"position:relative\">${textBlock}</div>
+          </div>`;
+      }
+      if(img.mode === 'front'){
+        return `
+          <div style=\"display:grid; gap:14px; align-content:start\">
+            <img src=\"${img.src}\" alt=\"\" style=\"justify-self:center; max-width:70%; border-radius:12px; border:1px solid var(--border); box-shadow:0 8px 24px rgba(0,0,0,.35)\" />
+            ${textBlock}
+          </div>`;
+      }
+      // side-by-side
+      const imgFirst = (img.position === 'left');
+      const imgHTML = `<img src=\"${img.src}\" alt=\"\" style=\"width:100%; height:auto; border-radius:12px; border:1px solid var(--border); box-shadow:0 8px 24px rgba(0,0,0,.25)\" />`;
+      const txtHTML = textBlock;
+      return `
+        <div style=\"display:grid; grid-template-columns: 1.1fr 1.4fr; gap:18px; align-items:start\">
+          ${imgFirst ? imgHTML : txtHTML}
+          ${imgFirst ? txtHTML : imgHTML}
+        </div>`;
+    }
+
+    function render(){
+      $slides.innerHTML = slidesData.map((s,i)=>{
+        return `
+          <article class=\"slide\" data-idx=\"${i}\" aria-label=\"${s.title}\">
+            <header><h1>${s.title}</h1></header>
+            ${slideBodyHTML(s)}
+            <footer class=\"kicker\">Roland Barthes, Image–Music–Text (1977)</footer>
+          </article>`
+      }).join('');
+    }
+    render();
+
+    // Navigation
+    const $prev = document.getElementById('prev');
+    const $next = document.getElementById('next');
+    const $counter = document.getElementById('counter');
+    const total = slidesData.length;
+    let idx = 0;
+
+    function update(){
+      document.querySelectorAll('.slide').forEach((el,i)=>{
+        el.style.display = (i===idx)? 'grid':'none';
+      });
+      $counter.textContent = (idx+1) + ' / ' + total;
+      history.replaceState(null, '', '#' + (idx+1));
+    }
+    function show(i){ idx = Math.max(0, Math.min(total-1, i)); update(); }
+
+    $prev.addEventListener('click', ()=> show(idx-1));
+    $next.addEventListener('click', ()=> show(idx+1));
+    window.addEventListener('keydown', (e)=>{
+      if (e.key === 'ArrowLeft') show(idx-1);
+      if (e.key === 'ArrowRight' || e.key === ' ') show(idx+1);
+      if (e.key === 'Escape') document.exitFullscreen?.();
+      if (e.key.toLowerCase() === 't') cycleTheme();
+    });
+
+    // start at hash if present
+    const start = Math.max(1, Math.min(total, parseInt(location.hash.replace('#','')||'1',10)))-1;
+    show(start);
+
+    // Theme handling
+    const THEME_KEY = 'doa_theme';
+    const $theme = document.getElementById('theme');
+    function applyTheme(mode){
+      document.body.classList.remove('theme-light','theme-news');
+      if(mode==='light') document.body.classList.add('theme-light');
+      if(mode==='news') document.body.classList.add('theme-news');
+      localStorage.setItem(THEME_KEY, mode);
+      $theme.value = mode;
+    }
+    function cycleTheme(){
+      const order = ['dark','light','news'];
+      const cur = localStorage.getItem(THEME_KEY) || 'dark';
+      const next = order[(order.indexOf(cur)+1)%order.length];
+      applyTheme(next);
+    }
+    $theme.addEventListener('change', ()=> applyTheme($theme.value));
+    applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  </script>
+</body>
+</html>

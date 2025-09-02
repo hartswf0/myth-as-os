@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>PLoT — Tug‑of‑War (Live Deck)</title>
+<meta name="description" content="Probabilistic Language of Thought demo: encode stories as probabilistic conditions, infer latent strengths, and visualize a live tug‑of‑war." />
+<style>
+  :root{
+    --bg:#0a0b0d;         /* Saul‑Bass noir */
+    --panel:#12141a;
+    --ink:#e8ebf2;        /* off‑white */
+    --muted:#a2a9b8;
+    --rule:#1f2330;
+    --accent:#ff3b30;     /* Bass red */
+    --accent2:#ffb02e;    /* warm mustard */
+    --ok:#19c37d;
+    --bad:#db4545;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; background:
+    radial-gradient(1200px 800px at 120% -10%, #10121a 20%, transparent 70%),
+    radial-gradient(1000px 600px at -20% 120%, #0e1016 10%, transparent 70%),
+    var(--bg);
+    color:var(--ink); font-family:var(--sans); line-height:1.45;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  header{position:sticky; top:0; z-index:10; background:linear-gradient(180deg, rgba(10,11,13,.95), rgba(10,11,13,.75)); backdrop-filter: blur(6px); border-bottom:1px solid var(--rule);}
+  .bar{display:flex; align-items:center; gap:10px; padding:10px 14px;}
+  .brand{font-weight:800; letter-spacing:.5px; text-transform:uppercase;}
+  .brand .dot{color:var(--accent)}
+  .progress{margin-left:auto; display:flex; gap:6px}
+  .dotp{width:8px; height:8px; border-radius:50%; background:#2a2f3d;}
+  .dotp.active{background:var(--accent2)}
+
+  .slides{scroll-snap-type:x mandatory; display:flex; overflow-x:auto; overscroll-behavior:contain; height:calc(100vh - 52px);}
+  .slide{scroll-snap-align:start; flex:0 0 100%; padding:24px; display:grid; grid-template-rows:auto 1fr; gap:16px}
+  .card{background:var(--panel); border:1px solid var(--rule); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  h1,h2,h3{margin:0 0 8px 0}
+  h1{font-size:clamp(22px, 4.5vw, 44px); letter-spacing:.2px}
+  h2{font-size:clamp(18px, 3.3vw, 28px)}
+  p,li{font-size:clamp(14px, 2.7vw, 18px); color:#d9deea}
+  code, pre{font-family:var(--mono); font-size:clamp(12px, 2.4vw, 15px)}
+  pre{background:#0c0f16; border:1px solid #1a2030; border-radius:12px; padding:12px; overflow:auto}
+  .row{display:grid; grid-template-columns:1.2fr 1fr; gap:14px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid4{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px}
+  .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--rule); border-radius:999px; font-size:12px; color:var(--muted)}
+  .btn{cursor:pointer; user-select:none; border:1px solid var(--rule); background:linear-gradient(180deg,#181b24,#12141a); color:var(--ink); padding:10px 14px; border-radius:12px; font-weight:700}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{border-color:#3a3f52; background:linear-gradient(180deg, #ff3b30, #d13229); color:#fff}
+  .btn.ghost{background:transparent}
+  label{font-size:12px; color:var(--muted)}
+  input[type="number"], input[type="range"], select{width:100%; padding:8px 10px; border-radius:10px; border:1px solid var(--rule); background:#0c0f16; color:var(--ink)}
+  .small{font-size:12px; color:var(--muted)}
+  table{width:100%; border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--rule); padding:8px; text-align:left; font-size:clamp(12px,2.3vw,15px)}
+  .ok{color:var(--ok)} .bad{color:var(--bad)}
+  .ropeWrap{position:relative; background:linear-gradient(180deg,#0d0f14,#10131a); border:1px solid var(--rule); border-radius:16px; height:320px; overflow:hidden}
+  .rope{position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); width:6px; height:260px; background:
+      repeating-linear-gradient(90deg, #caa56a 0 8px, #8d6a3e 8px 16px);
+      border-radius:6px; box-shadow:0 0 0 2px #1a1510 inset, 0 6px 18px rgba(0,0,0,.4)}
+  .flag{position:absolute; left:50%; top:50%; width:18px; height:18px; transform:translate(-50%,-50%); background:var(--accent); border-radius:2px; box-shadow:0 0 0 2px #220b0a inset}
+  .team{position:absolute; top:50%; width:42%; height:80px; transform:translateY(-50%); display:flex; align-items:center; justify-content:space-between; padding:0 8px}
+  .team.left{left:0}
+  .team.right{right:0; flex-direction:row-reverse}
+  .avatar{width:64px; height:64px; border-radius:50%; background:#161922; border:1px solid #30364a; display:grid; place-items:center; font-weight:900}
+  .name{font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px}
+  .meter{height:8px; background:#0f121b; border:1px solid #2b3144; border-radius:999px; overflow:hidden}
+  .meter > i{display:block; height:100%; background:linear-gradient(90deg, var(--accent2), var(--accent)); width:0%}
+  canvas.spark{width:100%; height:60px; display:block; background:#0b0e15; border:1px solid #1a2030; border-radius:8px}
+  .kbd{font-family:var(--mono); font-size:12px; color:#c6cbe0; background:#0b0e15; padding:2px 6px; border:1px solid #222b3d; border-radius:6px}
+  .help{color:var(--muted); font-size:12px}
+  .kbdrow{display:flex; gap:8px; align-items:center}
+
+  @media (max-width: 960px){
+    .row{grid-template-columns:1fr}
+    .team{height:96px}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div class="brand">PLoT<span class="dot">•</span> Tug‑of‑War</div>
+      <div class="pill">Language → Probabilistic World Models</div>
+      <div class="progress" id="progress"></div>
+    </div>
+  </header>
+
+  <main class="slides" id="slides" aria-live="polite">
+    <!-- Slide 1: From Story to Reasoning -->
+    <section class="slide" data-title="From Story to Reasoning">
+      <div class="card">
+        <h1>From Story to Reasoning</h1>
+        <p><strong>Example</strong>: “Tom beats John in a sprint; later, John and Mary beat Tom and Sue in rowing.”</p>
+        <p><strong>Point</strong>: PLoT treats sentences as <em>probabilistic code</em> that updates a world model of hidden attributes (e.g., strength, teamwork).</p>
+        <div class="grid2">
+          <div class="card">
+            <h2>One‑Line Thesis</h2>
+            <p>Meaning is a <strong>probability distribution</strong>, not a fixed definition.</p>
+            <ul>
+              <li>LLM parses text → probabilistic program</li>
+              <li>Program conditions a generative model</li>
+              <li>Posterior encodes what the story implies</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>Keyboard / Touch</h2>
+            <div class="kbdrow"><span class="kbd">←</span><span class="kbd">→</span><span class="help">navigate slides</span></div>
+            <div class="kbdrow"><span class="kbd">R</span><span class="help">run inference</span></div>
+            <div class="kbdrow"><span class="kbd">S</span><span class="help">simulate tug‑of‑war</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 2: Encoding Observations as Conditions -->
+    <section class="slide" data-title="Encode Conditions">
+      <div class="row">
+        <div class="card">
+          <h2>Encode Observations as Probabilistic Conditions</h2>
+          <pre><code>(condition
+  (and
+    (won-against '(tom) '(john))
+    (won-against '(john mary) '(tom sue))))</code></pre>
+          <p><strong>won‑against</strong> is a probabilistic predicate using a logistic link:</p>
+          <pre><code>Pr(win(A,B)) = σ( strength(A) − strength(B) )</code></pre>
+          <p class="small">Teams sum member strengths; outcomes add likelihood weight, not certainty.</p>
+        </div>
+        <div class="card">
+          <h2>Prior Setup</h2>
+          <div class="grid4">
+            <div>
+              <label>Tom prior μ, σ</label>
+              <div class="grid2"><input id="mu_tom" type="number" step="0.1" value="0"><input id="sd_tom" type="number" step="0.1" value="1"></div>
+            </div>
+            <div>
+              <label>John prior μ, σ</label>
+              <div class="grid2"><input id="mu_john" type="number" step="0.1" value="0"><input id="sd_john" type="number" step="0.1" value="1"></div>
+            </div>
+            <div>
+              <label>Mary prior μ, σ</label>
+              <div class="grid2"><input id="mu_mary" type="number" step="0.1" value="0"><input id="sd_mary" type="number" step="0.1" value="1"></div>
+            </div>
+            <div>
+              <label>Sue prior μ, σ</label>
+              <div class="grid2"><input id="mu_sue" type="number" step="0.1" value="0"><input id="sd_sue" type="number" step="0.1" value="1"></div>
+            </div>
+          </div>
+          <div class="grid4" style="margin-top:10px">
+            <div>
+              <label># Samples</label>
+              <input id="samples" type="number" min="1000" step="1000" value="20000">
+            </div>
+            <div>
+              <label>Temperature (match noise)</label>
+              <input id="temp" type="number" min="0.1" step="0.1" value="1.0">
+            </div>
+            <div>
+              <label>Histogram bins</label>
+              <input id="bins" type="number" min="10" step="5" value="41">
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:8px">
+              <button class="btn primary" id="runBtn">Run Inference</button>
+              <button class="btn ghost" id="resetBtn">Reset</button>
+            </div>
+          </div>
+          <p class="small">Tip: press <span class="kbd">R</span> to rerun quickly.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3: Posterior Results -->
+    <section class="slide" data-title="Posterior Results">
+      <div class="row">
+        <div class="card">
+          <h2>Posterior Summary</h2>
+          <table id="postTable">
+            <thead><tr><th>Player</th><th>Mean</th><th>SD</th><th>95% Mass (approx)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p class="small">Weighted Monte Carlo with likelihoods: σ(Δstrength/temperature) for each observed match.</p>
+        </div>
+        <div class="card">
+          <h2>Posterior Shapes</h2>
+          <div class="grid4">
+            <div><label>Tom</label><canvas class="spark" id="spark_tom" width="400" height="100"></canvas></div>
+            <div><label>John</label><canvas class="spark" id="spark_john" width="400" height="100"></canvas></div>
+            <div><label>Mary</label><canvas class="spark" id="spark_mary" width="400" height="100"></canvas></div>
+            <div><label>Sue</label><canvas class="spark" id="spark_sue" width="400" height="100"></canvas></div>
+          </div>
+          <p class="small">Histograms aggregated on‑the‑fly (no sample storage required).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4: Live Tug‑of‑War -->
+    <section class="slide" data-title="Live Tug‑of‑War">
+      <div class="row">
+        <div class="card">
+          <h2>Simulation Arena</h2>
+          <div class="grid2" style="margin-bottom:10px">
+            <div>
+              <label>Match</label>
+              <select id="matchSel">
+                <option value="m1">Match 1 — Tom vs John</option>
+                <option value="m2" selected>Match 2 — (John+Mary) vs (Tom+Sue)</option>
+              </select>
+            </div>
+            <div>
+              <label>Uncertainty Mode</label>
+              <select id="uncertaintySel">
+                <option value="means">Use posterior means</option>
+                <option value="resample">Resample each tick</option>
+              </select>
+            </div>
+          </div>
+          <div class="ropeWrap" id="arena">
+            <div class="team left" id="teamL">
+              <div>
+                <div class="name" id="Lnames">Tom + Sue</div>
+                <div class="meter"><i id="Lmeter" style="width:0%"></i></div>
+              </div>
+              <div class="avatar" id="Lav">L</div>
+            </div>
+            <div class="team right" id="teamR">
+              <div>
+                <div class="name" id="Rnames">John + Mary</div>
+                <div class="meter"><i id="Rmeter" style="width:0%"></i></div>
+              </div>
+              <div class="avatar" id="Rav">R</div>
+            </div>
+            <div class="rope" id="rope"></div>
+            <div class="flag" id="flag"></div>
+          </div>
+          <div style="display:flex; gap:10px; margin-top:10px">
+            <button class="btn" id="simBtn">Simulate Pull</button>
+            <button class="btn ghost" id="stopBtn">Stop</button>
+          </div>
+          <p class="small">Win probability ≈ σ(Δteam strength). Animation adds noise + friction for drama.</p>
+        </div>
+        <div class="card">
+          <h2>Numbers Behind the Drama</h2>
+          <div class="grid2">
+            <div>
+              <label>Team L strength (≈)</label>
+              <div class="meter"><i id="Lbar" style="width:0%"></i></div>
+              <p id="Ltext" class="small">—</p>
+            </div>
+            <div>
+              <label>Team R strength (≈)</label>
+              <div class="meter"><i id="Rbar" style="width:0%"></i></div>
+              <p id="Rtext" class="small">—</p>
+            </div>
+          </div>
+          <div class="grid2" style="margin-top:10px">
+            <div>
+              <label>Predicted R win prob</label>
+              <div class="meter"><i id="Pbar" style="width:50%"></i></div>
+              <p id="Ptext" class="small">—</p>
+            </div>
+            <div>
+              <label>Friction / Noise</label>
+              <input id="noise" type="range" min="0" max="1" step="0.01" value="0.35" />
+              <p class="small">Higher noise = more upsets.</p>
+            </div>
+          </div>
+          <p class="small">Tip: press <span class="kbd">S</span> to simulate after running inference.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5: How It’s Made -->
+    <section class="slide" data-title="How It’s Made">
+      <div class="grid2">
+        <div class="card">
+          <h2>Probabilistic Engine (Pseudo‑JS)</h2>
+<pre><code>// Priors
+s ~ Normal(μ, σ) for tom, john, mary, sue
+
+// Likelihood (logistic link)
+p1 = σ( (s.tom - s.john) / temp )
+p2 = σ( (s.john + s.mary - s.tom - s.sue) / temp )
+
+// Importance sampling
+for i in 1..N:
+  draw s from priors
+  w = p1 * p2
+  accumulate weighted moments + histograms
+normalize → posterior means, SDs, histograms
+</code></pre>
+          <p class="small">Rejection sampling would discard most draws; importance keeps all draws but scales them by likelihood.</p>
+        </div>
+        <div class="card">
+          <h2>Language → Program</h2>
+          <pre><code>(condition
+  (and (won-against '(tom) '(john))
+       (won-against '(john mary) '(tom sue))))</code></pre>
+          <ul>
+            <li><strong>Parse</strong> text → predicates + entities.</li>
+            <li><strong>Compile</strong> predicates → probabilities (σ over strength differences).</li>
+            <li><strong>Condition</strong> the generative model → posterior.</li>
+          </ul>
+          <p class="small">Same pattern generalizes to negotiations, elections, games, & team dynamics.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: Applications -->
+    <section class="slide" data-title="Applications">
+      <div class="card">
+        <h2>Where This Helps</h2>
+        <ul>
+          <li><strong>Narrative games</strong>: NPC motives update with story.</li>
+          <li><strong>Ethnography</strong>: power/intent from meeting notes.</li>
+          <li><strong>Explainable AI</strong>: “P = 0.78 because Δstrength = 0.9”.</li>
+        </ul>
+        <p class="small">Export idea: posterior summary JSON to drive other tools.</p>
+        <button class="btn" id="exportBtn">Export Posterior JSON</button>
+      </div>
+    </section>
+  </main>
+
+<script>
+// === Small utilities ===
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const σ = x => 1/(1+Math.exp(-x));
+function randn(){ // Box-Muller
+  let u=0, v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+function drawNormal(mu, sd){ return mu + sd*randn(); }
+function fmt(n){ return (Math.abs(n)>=100? n.toFixed(0) : Math.abs(n)>=10? n.toFixed(1) : n.toFixed(2)); }
+
+// === Global posterior state ===
+let posterior = {
+  mean:{tom:0, john:0, mary:0, sue:0},
+  sd:{tom:1, john:1, mary:1, sue:1},
+  hist:{ tom:[], john:[], mary:[], sue:[] },
+  bins:41, extent:[-3,3], totalW:0
+};
+
+// === Inference ===
+function runInference(){
+  const N = Math.max(1000, parseInt(document.getElementById('samples').value)||20000);
+  const temp = Math.max(0.05, parseFloat(document.getElementById('temp').value)||1.0);
+  const bins = Math.max(10, parseInt(document.getElementById('bins').value)||41);
+  const mu = {
+    tom: parseFloat(document.getElementById('mu_tom').value)||0,
+    john: parseFloat(document.getElementById('mu_john').value)||0,
+    mary: parseFloat(document.getElementById('mu_mary').value)||0,
+    sue: parseFloat(document.getElementById('mu_sue').value)||0,
+  };
+  const sd = {
+    tom: Math.max(0.01, parseFloat(document.getElementById('sd_tom').value)||1),
+    john: Math.max(0.01, parseFloat(document.getElementById('sd_john').value)||1),
+    mary: Math.max(0.01, parseFloat(document.getElementById('sd_mary').value)||1),
+    sue: Math.max(0.01, parseFloat(document.getElementById('sd_sue').value)||1),
+  };
+
+  // Running moments and histograms
+  const names=['tom','john','mary','sue'];
+  const m1={tom:0,john:0,mary:0,sue:0}, m2={tom:0,john:0,mary:0,sue:0};
+  const hist={ tom:new Array(bins).fill(0), john:new Array(bins).fill(0), mary:new Array(bins).fill(0), sue:new Array(bins).fill(0) };
+  const extent=[-3,3];
+  let W=0; // total weight
+
+  for(let i=0;i<N;i++){
+    const s={
+      tom: drawNormal(mu.tom, sd.tom),
+      john: drawNormal(mu.john, sd.john),
+      mary: drawNormal(mu.mary, sd.mary),
+      sue: drawNormal(mu.sue, sd.sue)
+    };
+    const p1 = σ((s.tom - s.john)/temp); // Tom beats John
+    const p2 = σ(((s.john + s.mary) - (s.tom + s.sue))/temp); // John+Mary beat Tom+Sue
+    const w = p1 * p2;
+
+    if(!isFinite(w) || w<=0) continue;
+    W += w;
+    // moments
+    for(const k of names){
+      m1[k] += w * s[k];
+      m2[k] += w * s[k] * s[k];
+      // histogram
+      const t = (s[k]-extent[0])/(extent[1]-extent[0]);
+      let bi = Math.floor(t*bins); if(bi<0) bi=0; if(bi>=bins) bi=bins-1;
+      hist[k][bi] += w;
+    }
+  }
+
+  // normalize
+  const mean={}, sdout={};
+  for(const k of names){
+    const muP = m1[k]/W; const ex2 = m2[k]/W; const varP = Math.max(1e-9, ex2 - muP*muP);
+    mean[k]=muP; sdout[k]=Math.sqrt(varP);
+  }
+  // normalize histograms to [0,1]
+  const hnorm={tom:[...hist.tom], john:[...hist.john], mary:[...hist.mary], sue:[...hist.sue]};
+  for(const k of names){
+    const maxv = Math.max(1e-9, Math.max(...hnorm[k]));
+    hnorm[k] = hnorm[k].map(v=>v/maxv);
+  }
+
+  posterior = {mean, sd: sdout, hist: hnorm, bins, extent, totalW:W};
+  renderPosterior();
+}
+
+// === Posterior rendering ===
+function renderPosterior(){
+  const tbody = document.querySelector('#postTable tbody');
+  const names=['tom','john','mary','sue'];
+  const pretty = {tom:'Tom', john:'John', mary:'Mary', sue:'Sue'};
+  tbody.innerHTML = names.map(k=>{
+    // crude 95% mass width ~ 4*sd under Normal
+    const width = 4*posterior.sd[k];
+    return `<tr><td>${pretty[k]}</td><td>${fmt(posterior.mean[k])}</td><td>${fmt(posterior.sd[k])}</td><td>${fmt(width)} ≈ ±2σ</td></tr>`;
+  }).join('');
+  // sparks
+  drawSpark('spark_tom', posterior.hist.tom);
+  drawSpark('spark_john', posterior.hist.john);
+  drawSpark('spark_mary', posterior.hist.mary);
+  drawSpark('spark_sue', posterior.hist.sue);
+  updateTeamsFromPosterior();
+}
+
+function drawSpark(id, arr){
+  const c = document.getElementById(id); if(!c) return; const ctx=c.getContext('2d');
+  const w=c.width, h=c.height;
+  ctx.clearRect(0,0,w,h);
+  // axes
+  ctx.fillStyle='#111522'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#1e2636'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,h-0.5); ctx.lineTo(w,h-0.5); ctx.stroke();
+  // bars
+  const n = arr.length; const pad=4; const bw = (w - pad*2)/n;
+  for(let i=0;i<n;i++){
+    const v = arr[i];
+    const bh = v * (h-10);
+    ctx.fillStyle = i%2? '#20304a' : '#1a2740';
+    ctx.fillRect(pad + i*bw, h-bh-1, bw-1, bh);
+  }
+  // overlay gradient
+  const grad=ctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0, '#79d0ff');
+  grad.addColorStop(1, '#ffb02e');
+  ctx.fillStyle=grad; ctx.globalAlpha=0.35;
+  for(let i=0;i<n;i++){
+    const v = arr[i]; const bh = v * (h-10);
+    ctx.fillRect(pad + i*bw, h-bh-1, bw-1, bh);
+  }
+  ctx.globalAlpha=1;
+}
+
+// === Tug-of-War Simulation ===
+let anim=null; let ropeX=0, v=0;
+function stopSim(){ if(anim){ cancelAnimationFrame(anim); anim=null; } }
+function startSim(){
+  stopSim(); ropeX=0; v=0; const noise=parseFloat(document.getElementById('noise').value)||0.35;
+  const mode=document.getElementById('uncertaintySel').value;
+  const {L,R} = computeTeams(mode==='means');
+  // meters, labels
+  const Lbar=document.getElementById('Lbar'), Rbar=document.getElementById('Rbar');
+  const Pbar=document.getElementById('Pbar');
+  const P = σ(R - L);
+  Lbar.style.width = `${clamp(50 + (L - (L+R)/2)*30, 0, 100)}%`;
+  Rbar.style.width = `${clamp(50 + (R - (L+R)/2)*30, 0, 100)}%`;
+  Pbar.style.width = `${Math.round(P*100)}%`;
+  document.getElementById('Ltext').textContent = `L ≈ ${fmt(L)}`;
+  document.getElementById('Rtext').textContent = `R ≈ ${fmt(R)}`;
+  document.getElementById('Ptext').textContent = `Pr(R wins) ≈ ${fmt(P)}`;
+
+  // avatars
+  const matchSel=document.getElementById('matchSel').value;
+  document.getElementById('Lnames').textContent = matchSel==='m1' ? 'Tom' : 'Tom + Sue';
+  document.getElementById('Rnames').textContent = matchSel==='m1' ? 'John' : 'John + Mary';
+
+  const arena = document.getElementById('arena');
+  const flag = document.getElementById('flag');
+  const rope = document.getElementById('rope');
+
+  let t0=null; const friction=0.94, k=0.018;
+  function step(ts){
+    if(!t0) t0=ts;
+    const dt = Math.min(32, ts - t0); t0 = ts;
+
+    // Optionally resample each tick to visualize uncertainty
+    let Ls=L, Rs=R;
+    if(mode==='resample'){
+      const s = drawPosteriorSample();
+      const msel=document.getElementById('matchSel').value;
+      if(msel==='m1'){ Ls = s.tom; Rs = s.john; }
+      else { Ls = s.tom + s.sue; Rs = s.john + s.mary; }
+    }
+
+    const force = k * (Rs - Ls) + (Math.random()*2-1) * noise * 0.02;
+    v = v * friction + force * (dt/16);
+    ropeX += v * 120; // pixel scale
+
+    // clamp rope/flag to arena bounds
+    const maxX = arena.clientWidth*0.38; // allow some margin
+    ropeX = clamp(ropeX, -maxX, maxX);
+
+    // apply transforms
+    flag.style.transform = `translate(calc(-50% + ${ropeX}px), -50%) rotate(${ropeX*0.05}deg)`;
+    rope.style.transform = `translate(calc(-50% + ${ropeX*0.25}px), -50%)`;
+
+    // meters reflect ongoing advantage
+    const adv = clamp(50 + σ(Rs - Ls)*100 - 50, 0, 100);
+    document.getElementById('Lmeter').style.width = `${100 - adv}%`;
+    document.getElementById('Rmeter').style.width = `${adv}%`;
+
+    // win condition
+    if(Math.abs(ropeX) >= maxX-4){
+      stopSim();
+      const leftWins = ropeX < 0;
+      const msg = leftWins ? 'Left team wins!' : 'Right team wins!';
+      toast(msg + `  (noise=${noise})`);
+      return;
+    }
+    anim = requestAnimationFrame(step);
+  }
+  anim = requestAnimationFrame(step);
+}
+
+function computeTeams(useMeans=true){
+  const m=posterior.mean; const s=posterior.sd;
+  // fallback if not run yet
+  const mean = (k)=> (m[k] ?? 0);
+  const matchSel=document.getElementById('matchSel').value;
+  let L,R; // L = left team strength, R = right
+  if(matchSel==='m1'){ L = mean('tom'); R = mean('john'); }
+  else { L = mean('tom') + mean('sue'); R = mean('john') + mean('mary'); }
+  return {L,R};
+}
+function drawPosteriorSample(){
+  // Gaussian approx using posterior means + sd
+  const s={};
+  for(const k of ['tom','john','mary','sue']){
+    s[k] = drawNormal(posterior.mean[k]||0, posterior.sd[k]||1);
+  }
+  return s;
+}
+
+// === UI wiring ===
+const slides = document.getElementById('slides');
+function updateProgress(){
+  const n = document.querySelectorAll('.slide').length;
+  const cur = Math.round(slides.scrollLeft / slides.clientWidth);
+  const p = document.getElementById('progress');
+  p.innerHTML = Array.from({length:n}, (_,i)=>`<div class="dotp ${i===cur?'active':''}"></div>`).join('');
+}
+slides.addEventListener('scroll', ()=>{ updateProgress(); });
+window.addEventListener('resize', updateProgress);
+updateProgress();
+
+function toast(msg){
+  const el=document.createElement('div');
+  el.textContent=msg; el.style.position='fixed'; el.style.left='50%'; el.style.bottom='20px'; el.style.transform='translateX(-50%)'; el.style.background='#0e1320'; el.style.border='1px solid #26304a'; el.style.color='var(--ink)'; el.style.padding='10px 14px'; el.style.borderRadius='10px'; el.style.boxShadow='0 10px 30px rgba(0,0,0,.35)'; el.style.zIndex=99;
+  document.body.appendChild(el); setTimeout(()=>{ el.remove(); }, 2000);
+}
+
+// Buttons
+const runBtn=document.getElementById('runBtn');
+runBtn.addEventListener('click', ()=>{ runBtn.disabled=true; runBtn.textContent='Running…'; setTimeout(()=>{ runInference(); runBtn.disabled=false; runBtn.textContent='Run Inference'; toast('Posterior updated'); }, 30); });
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  document.getElementById('mu_tom').value=0; document.getElementById('sd_tom').value=1;
+  document.getElementById('mu_john').value=0; document.getElementById('sd_john').value=1;
+  document.getElementById('mu_mary').value=0; document.getElementById('sd_mary').value=1;
+  document.getElementById('mu_sue').value=0; document.getElementById('sd_sue').value=1;
+  document.getElementById('samples').value=20000; document.getElementById('temp').value=1.0; document.getElementById('bins').value=41;
+  posterior={mean:{tom:0,john:0,mary:0,sue:0}, sd:{tom:1,john:1,mary:1,sue:1}, hist:{tom:[],john:[],mary:[],sue:[]}, bins:41, extent:[-3,3], totalW:0};
+  renderPosterior(); toast('Reset to priors');
+});
+
+const simBtn=document.getElementById('simBtn');
+simBtn.addEventListener('click', startSim);
+
+document.getElementById('stopBtn').addEventListener('click', stopSim);
+
+document.getElementById('matchSel').addEventListener('change', ()=>{
+  updateTeamsFromPosterior();
+});
+
+document.getElementById('uncertaintySel').addEventListener('change', ()=>{});
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const data={ mean:posterior.mean, sd:posterior.sd, bins:posterior.bins, extent:posterior.extent };
+  const blob=new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='plot_posterior.json'; a.click(); URL.revokeObjectURL(url);
+});
+
+// Keyboard shortcuts
+window.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowRight'){ slides.scrollBy({left: slides.clientWidth, behavior:'smooth'}); }
+  if(e.key==='ArrowLeft'){ slides.scrollBy({left: -slides.clientWidth, behavior:'smooth'}); }
+  if(e.key.toLowerCase()==='r'){ document.getElementById('runBtn').click(); }
+  if(e.key.toLowerCase()==='s'){ document.getElementById('simBtn').click(); }
+});
+
+function updateTeamsFromPosterior(){
+  const {L,R} = computeTeams(true);
+  document.getElementById('Lbar').style.width = `${clamp(50 + (L - (L+R)/2)*30, 0, 100)}%`;
+  document.getElementById('Rbar').style.width = `${clamp(50 + (R - (L+R)/2)*30, 0, 100)}%`;
+  document.getElementById('Ltext').textContent = `L ≈ ${fmt(L)}`;
+  document.getElementById('Rtext').textContent = `R ≈ ${fmt(R)}`;
+  const P = σ(R - L);
+  document.getElementById('Pbar').style.width = `${Math.round(P*100)}%`;
+  document.getElementById('Ptext').textContent = `Pr(R wins) ≈ ${fmt(P)}`;
+}
+
+// Initial render to set placeholders
+renderPosterior();
+updateProgress();
+</script>
+</body>
+</html>
