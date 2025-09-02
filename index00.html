@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>𓉗 myth-operating-system — Decks</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' font-size='90'%3E%F0%93%89%97%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ==========================
+     OS-LIKE THEME SYSTEM (Copied from LMC 2400)
+     Modes: light, dark, newspaper
+     ========================== */
+  :root {
+    /* Light Minimal */
+    --bg: #fcfcfc;
+    --bg-elev: #f0f0f0;
+    --text: #333;
+    --muted: #666;
+    --accent: #1a73e8; /* Google Blue */
+    --accent-weak: #e8f0fe; /* Light Google Blue */
+    --card: #ffffff;
+    --border: #ddd;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 6px 24px rgba(0,0,0,.06);
+    --link-rgb: 26, 115, 232; /* For shadows */
+  }
+  .theme-dark {
+    --bg: #1a1a1a;
+    --bg-elev: #2c2c2c;
+    --text: #e0e0e0;
+    --muted: #a0a0a0;
+    --accent: #8ab4f8; /* Google Blue Light */
+    --accent-weak: #2a3b5c; /* Darker blue for background */
+    --card: #202020;
+    --border: #444;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.45);
+    --link-rgb: 138, 180, 248; /* For shadows */
+  }
+  .theme-news {
+    --bg: #fdfae6; /* Creamy paper */
+    --bg-elev: #f7f0d6;
+    --text: #3e2723; /* Dark brown/sepia */
+    --muted: #6b665a;
+    --accent: #6a0505; /* Deep red ink */
+    --accent-weak: #ead9b2; /* Lighter sepia */
+    --card: #fffefd;
+    --border: #d8c39e;
+    --shadow: 0 1px 1px rgba(0,0,0,.04), 0 8px 18px rgba(0,0,0,.08);
+    --link-rgb: 106, 5, 5; /* For shadows */
+  }
+
+  /* Base Font Sizing & Global Defaults */
+  html { font-size: 100%; } /* Base for rem units, can be scaled by JS */
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    color: var(--text);
+    line-height: 1.3;
+    margin-top: 1.8em;
+    margin-bottom: 0.8em;
+    font-weight: 600;
+  }
+  h1 { font-size: 2.2rem; }
+  h2 { font-size: 1.8rem; }
+  h3 { font-size: 1.4rem; }
+  h4 { font-size: 1.2rem; }
+  h5 { font-size: 1.1rem; }
+
+  /* Links */
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .ext-link-icon {
+      vertical-align: text-top;
+      margin-left: 4px;
+      color: var(--muted);
+  }
+
+  /* Text elements */
+  p { margin-bottom: 1em; font-size: 1rem; }
+  ul, ol { margin-left: 1.5rem; margin-bottom: 1em; font-size: 1rem; }
+  li { margin-bottom: 0.5em; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  /* App Layout */
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100dvh;
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+
+  /* Top Bar (OS feel) */
+  .topbar {
+    position: sticky; top: 0; z-index: 5;
+    background: linear-gradient(180deg, var(--bg-elev), var(--bg));
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 10px 12px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+    transition: background 0.3s ease, border-bottom 0.3s ease, box-shadow 0.3s ease;
+  }
+  .window-dots { display: inline-flex; gap:6px; padding:4px 6px; }
+  .dot { width:10px; height:10px; border-radius:50%; border:1px solid var(--border); }
+  .dot.red{ background:#ff5f57; border-color:#e33e2f; }
+  .dot.yellow{ background:#febc2e; border-color:#d79a15; }
+  .dot.green{ background:#28c840; border-color:#1ea232; }
+  .title {
+    font-weight: 600;
+    letter-spacing: .2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .modes {
+    display: inline-flex; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; padding: 4px;
+    transition: background 0.3s ease, border 0.3s ease;
+  }
+  .modes button {
+    font: 500 0.75rem/1 'IBM Plex Mono', monospace; /* 12px */
+    letter-spacing: .2px;
+    padding: 8px 10px; border-radius: 999px; border: 0; background: transparent; color: var(--muted);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .modes button.active { background: var(--card); color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--link-rgb), 0.3); }
+
+  /* Search (not used on this page, but good to keep from LMC for consistency) */
+  .search {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--bg-elev); border:1px solid var(--border); border-radius: 999px; padding: 8px 10px;
+    transition: background 0.3s ease, border 0.3s ease;
+  }
+  .search input { flex:1; border:0; background:transparent; color:var(--text); outline:none; font: 500 1rem/1.2 'IBM Plex Sans', sans-serif; }
+  .kbd { font: 500 0.75rem/1 'IBM Plex Mono', monospace; color: var(--muted); background: var(--card); border:1px solid var(--border); border-radius: 6px; padding: 4px 6px; }
+
+  /* Tabs (bottom nav) - Not used on this page */
+  .tabs {
+    position: sticky; bottom: 0; left: 0; right: 0; z-index: 5;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    transition: background 0.3s ease, border-top 0.3s ease;
+  }
+  .tabs button {
+    appearance: none; border: 0; background: transparent; padding: 10px 6px; font:600 0.75rem 'IBM Plex Mono', monospace; color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .tabs button.active { color: var(--accent); box-shadow: inset 0 2px 0 var(--accent); }
+
+  /* Main Content Area */
+  main { padding: 10px 12px 20px; } /* Adjusted bottom padding as no bottom tabs here */
+
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin: 10px 0 14px;
+    transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+  }
+  .section h2 { font-size: 1.125rem; margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 4px; line-height: 1.5; } /* Re-added for the original subtitle */
+
+  /* Cards & lists */
+  .grid { display:grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  @media (max-width: 560px){ .two{ grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border:1px solid var(--border); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 6px; font-size: 1rem; }
+  .meta { font: 500 0.8125rem 'IBM Plex Mono', monospace; color: var(--muted); line-height: 1.5; }
+  .meta p { margin-bottom: 0.5em; }
+
+  /* Original tile now styled to fit new aesthetic */
+  .deck-card {
+    position: relative; /* For the delete button positioning */
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+    padding: 16px; aspect-ratio: 1 / 1; /* Ensures square aspect ratio */
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; text-decoration: none; color: var(--text);
+    box-shadow: var(--shadow);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .deck-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 36px rgba(0,0,0,.35); /* Stronger shadow on hover */
+    border-color: var(--accent); /* Accent color on hover */
+  }
+  .deck-card .icon {
+    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    font-weight: 800; letter-spacing: .03em;
+    font-family: 'IBM Plex Mono', monospace; /* Use the new monospace font for icons */
+    color: var(--card); /* Text color inside icon, contrasting with gradient */
+    font-size: 20px; /* Size for hieroglyph/initials */
+  }
+  /* Original presentation icon gradient, adapted to new accent variable */
+  .icon.presentation { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black)); }
+
+  .deck-card h3 { margin: 0; font-size: 14px; text-align: center; color: var(--text); }
+  .deck-card p { margin: 0; font-size: 12px; color: var(--muted); text-align: center; }
+
+  /* Delete button for deck cards */
+  .deck-card .delete-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.2s ease, background 0.2s ease;
+  }
+  .deck-card:hover .delete-btn { opacity: 1; }
+  .deck-card .delete-btn:hover { background: var(--accent2); color: white; border-color: var(--accent2); } /* Red for delete */
+
+  footer { padding: 24px 16px 40px; color: var(--muted); font-size: 12px; text-align: center; }
+
+  /* Toolbar for add button */
+  .toolbar {
+    display: flex;
+    justify-content: flex-end; /* Align to the right for "add new" */
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  .btn {
+    border:1px solid var(--border); background: var(--card); border-radius: 10px; padding: 8px 10px;
+    font: 500 0.75rem 'IBM Plex Mono', monospace; color: var(--text);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn:hover { background: var(--bg-elev); }
+
+  /* Launcher overlay (Copied from LMC 2400) */
+  .launcher-overlay { position: fixed; inset: 0; background: color-mix(in oklab, var(--bg) 60%, transparent); backdrop-filter: blur(6px); display:none; align-items: center; justify-content: center; z-index: 10001; }
+  .launcher-panel { width: min(720px, 92vw); max-height: 80vh; background: var(--card); border:1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); display:flex; flex-direction:column; overflow:hidden; }
+  .launcher-head { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); }
+  .launcher-head input { flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--bg); color: var(--text); }
+  .launcher-col { padding:12px; overflow:auto; }
+  .launcher-col h4 { margin:6px 0 10px; font-size: 1.125rem; }
+  .launcher-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background: var(--bg-elev); cursor:pointer; }
+  .launcher-item:hover { background: color-mix(in srgb, var(--bg-elev) 80%, var(--accent-weak)); border-color: var(--accent); }
+  .launcher-item[aria-disabled="true"] { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+  .badge { font: 700 0.625rem 'IBM Plex Mono', monospace; color: var(--muted); background: var(--bg); border:1px solid var(--border); padding:2px 6px; border-radius:999px; }
+  .icon-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:2px 6px; border:1px solid var(--border); border-radius:999px; font: 700 0.6875rem 'IBM Plex Mono', monospace; color: var(--muted); background: var(--bg); cursor:pointer; }
+  .icon-btn:hover { background: var(--bg-elev); }
+
+  /* In-page OS shell (windows + dock) - Copied from LMC 2400, simplified for decks */
+  .os-windows-layer { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+  .os-window { position: absolute; min-width: 320px; min-height: 220px; width: 560px; height: 420px; background: var(--card); border:1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; pointer-events: auto; }
+  .os-titlebar { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border); background: var(--bg-elev); cursor: move; }
+  .os-titlebar .window-dots { padding:0; }
+  .os-titlebar .title { font-weight:600; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .os-content { position:absolute; top:38px; bottom:0; left:0; right:0; display:grid; grid-template-columns: 1fr; gap:0; } /* Simplified for iframe only */
+  .os-content iframe { width:100%; height:100%; border:0; background:var(--card); }
+  .os-window.max { left:0 !important; top:48px !important; width:100% !important; height: calc(100% - 56px) !important; border-radius: 0; }
+  .os-dock { position: fixed; left:50%; transform:translateX(-50%); bottom:10px; display:flex; gap:8px; padding:6px 10px; background: var(--bg); border:1px solid var(--border); border-radius: 999px; box-shadow: var(--shadow); pointer-events:auto; z-index: 10000; }
+  .dock-item { padding:4px 8px; border:1px solid var(--border); border-radius: 999px; background: var(--card); cursor: pointer; }
+
+  /* Modal styling (for add deck form) */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in oklab, var(--bg) 60%, transparent);
+    backdrop-filter: blur(6px);
+    display: none; /* Hidden by default */
+    align-items: center; justify-content: center;
+    z-index: 10002;
+  }
+  .modal-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    width: min(500px, 90vw);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .modal-content h3 { margin: 0 0 10px; }
+  .modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .modal-content input[type="text"],
+  .modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  .modal-content input[type="text"]:focus,
+  .modal-content textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--link-rgb), 0.3);
+  }
+  .modal-content textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .modal-actions .btn {
+    padding: 10px 15px;
+  }
+  .modal-actions .btn.accent {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .modal-actions .btn.accent:hover {
+    background: color-mix(in srgb, var(--accent) 80%, black);
+  }
+
+
+  /* Media Queries (Copied from LMC 2400, adjusted for this page) */
+  @media (min-width: 720px) { h1 { font-size: 26px; } .grid { gap: 16px; } }
+  @media (max-width: 600px) {
+      .app {
+          max-width: 100%;
+          padding: 0;
+      }
+      main { padding: 10px 0 20px 8px; }
+
+      .topbar {
+          padding: 8px;
+          grid-template-columns: 1fr auto;
+          gap: 8px;
+      }
+      .topbar .window-dots { display: none; }
+      .topbar .modes { display: none; }
+      .topbar .title { font-size: 1rem; margin-left: 0; }
+
+      .deck-card {
+        padding: 12px;
+        gap: 8px;
+        border-radius: 12px;
+      }
+      .deck-card .icon {
+        width: 32px; height: 32px; border-radius: 8px; font-size: 1.1em;
+      }
+      .deck-card h3 { font-size: 13px; }
+      .deck-card p { font-size: 11px; }
+
+      /* Delete button for mobile */
+      .deck-card .delete-btn {
+        opacity: 1; /* Always visible on mobile for easier interaction */
+        width: 28px; height: 28px;
+        font-size: 16px;
+      }
+
+      /* OS-like Windows / Launcher for mobile */
+      .os-window, .launcher-panel, .modal-overlay {
+          width: 100% !important;
+          height: 100dvh !important;
+          left: 0 !important;
+          top: 0 !important;
+          border-radius: 0 !important;
+          min-width: unset;
+          min-height: unset;
+      }
+      .os-dock { display: none; }
+      .os-content { grid-template-columns: 1fr; }
+      .launcher-body { grid-template-columns: 1fr; }
+      .launcher-col:first-child { border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body class="theme-dark">
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="window-dots" aria-hidden="true"></div>
+      <div class="title"><span id="launcherTrigger" title="Open Launcher" style="cursor:pointer; margin-right:6px;">𓉗</span> myth-operating-system</div>
+      <div class="modes" role="tablist" aria-label="Theme">
+        <button class="active" data-mode="dark" role="tab" aria-selected="true" title="Dark Mode">Dark</button>
+        <button data-mode="light" role="tab" aria-selected="false" title="Light Mode Minimal">Light</button>
+        <button data-mode="news" role="tab" aria-selected="false" title="Newspaper Mode">News</button>
+      </div>
+
+    <!-- Import Deck JSON Modal -->
+    <div id="importDeckModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="importDeckModalTitle">
+        <h3 id="importDeckModalTitle">Import Deck (JSON)</h3>
+        <p class="muted" style="margin:0">Paste JSON or choose a .json file. We'll create a deck tile you can open.</p>
+        <label for="importFile">Load from file</label>
+        <input type="file" id="importFile" accept="application/json,.json" />
+
+        <label for="importTextarea">…or paste JSON</label>
+        <textarea id="importTextarea" placeholder="{\n  &quot;version&quot;: 1,\n  &quot;meta&quot;: { &quot;title&quot;: &quot;My Deck&quot; },\n  &quot;slides&quot;: [ ... ]\n}"></textarea>
+
+        <div class="modal-actions">
+          <button class="btn" id="cancelImport">Cancel</button>
+          <button class="btn accent" id="doImport">Import</button>
+        </div>
+      </div>
+    </div>
+    </header>
+
+    <main id="main">
+      <section class="section">
+        <h2>Decks</h2>
+        <p class="subtitle">Language is the root process that scripts reality; media are the engines that run it.</p>
+
+        <div class="toolbar">
+            <button class="btn" id="addNewDeckBtn">Add New Deck</button>
+            <button class="btn" id="importJsonBtn">Import JSON</button>
+        </div>
+
+        <div class="grid" id="deckGrid">
+          <!-- Deck cards will be dynamically loaded here by JS -->
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Add or remove decks by editing this index. Want auto-discovery of files? I can generate tiles for all .html/.pdf here.
+    </footer>
+
+    <!-- Launcher overlay -->
+    <div id="launcher" class="launcher-overlay" aria-hidden="true">
+      <div class="launcher-panel" role="dialog" aria-label="Launcher">
+        <div class="launcher-head">
+          <input id="launcherSearch" type="text" placeholder="Search decks (Cmd+K)" aria-label="Search decks"/>
+          <button class="icon-btn" id="launcherClose" title="Close Launcher">✕</button>
+        </div>
+        <div class="launcher-body">
+          <div class="launcher-col">
+            <h4>Decks</h4>
+            <div id="launcherDecks">
+              <!-- Decks will be injected here by JS -->
+            </div>
+          </div>
+          <div class="launcher-col">
+            <h4>Info</h4>
+            <div class="launcher-item" data-launch="about" aria-disabled="true" title="About this OS">About <span class="badge">soon</span></div>
+            <div class="launcher-item" data-launch="settings" aria-disabled="true" title="Settings">Settings <span class="badge">soon</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add New Deck Modal -->
+    <div id="addDeckModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="addDeckModalTitle">
+        <h3 id="addDeckModalTitle">Add New Deck</h3>
+        <label for="newDeckTitle">Title</label>
+        <input type="text" id="newDeckTitle" placeholder="e.g., My New Presentation" required />
+
+        <label for="newDeckUrl">URL</label>
+        <input type="text" id="newDeckUrl" placeholder="e.g., my-new-presentation.html" required />
+
+        <label for="newDeckIcon">Icon (1-2 characters/hieroglyph, e.g., 'MP', '𓏲')</label>
+        <input type="text" id="newDeckIcon" placeholder="Optional" maxlength="2" />
+
+        <label for="newDeckDescription">Description</label>
+        <textarea id="newDeckDescription" placeholder="e.g., My awesome new single-file deck"></textarea>
+
+        <div class="modal-actions">
+          <button class="btn" id="cancelAddDeck">Cancel</button>
+          <button class="btn accent" id="saveNewDeck">Add Deck</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Helper function to safely insert HTML (prevents XSS if data were user-generated)
+    function cleanHtml(htmlString) {
+      const div = document.createElement('div');
+      div.innerHTML = htmlString;
+      return div.innerHTML;
+    }
+
+    const DEFAULT_HIEROGLYPH = '𓏲'; // Hieroglyph for basket/container, good for documents
+
+    // Initial hardcoded decks (used if localStorage is empty)
+    const INITIAL_DECKS = [
+      { id: 'deck-001', href: 'roland-barthes-00.html', title: 'Roland Barthes 00', icon: 'RB', description: 'Single-file deck' },
+      { id: 'deck-002', href: 'world_of_wrestling_deck_v_2_single_file (1).html', title: 'World of Wrestling Deck v2', icon: 'V2', description: 'Single-file deck' },
+      { id: 'deck-003', href: 'barthes_world_of_wrestling_saul_bass_concrete_poetry_deck.html', title: 'Saul Bass Concrete Poetry', icon: 'SB', description: 'Single-file deck' },
+      { id: 'deck-004', href: 'barthes_world_of_wrestling_saul_bass_concrete_poetry_deck (1).html', title: 'Saul Bass Concrete Poetry (copy)', icon: 'SB', description: 'Single-file deck' },
+      { id: 'deck-005', href: 'myth_engines_saul_bass_whitney_deck_single_file.html', title: 'Myth Engines — Whitney', icon: 'ME', description: 'Single-file deck' }
+    ];
+
+    let DECK_DATA = [];
+
+    // ==========================
+    // LOCAL STORAGE MANAGEMENT
+    // ==========================
+    const LOCAL_STORAGE_KEY = 'mythos_decks';
+
+    function loadDecks() {
+      try {
+        const storedDecks = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedDecks) {
+          return JSON.parse(storedDecks);
+        }
+      } catch (e) {
+        console.error("Error loading decks from localStorage:", e);
+      }
+      // If no stored decks or error, use initial decks and save them
+      saveDecks(INITIAL_DECKS);
+      return INITIAL_DECKS;
+    }
+
+    function saveDecks(decksToSave) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(decksToSave));
+      } catch (e) {
+        console.error("Error saving decks to localStorage:", e);
+      }
+    }
+
+    // Initialize DECK_DATA on script load
+    DECK_DATA = loadDecks();
+
+    // ==========================
+    // THEME TOGGLER (Copied from LMC 2400)
+    // ==========================
+    const root = document.body;
+    const modeButtons = document.querySelectorAll('.modes button');
+
+    function setTheme(mode){
+      root.classList.remove('theme-dark','theme-news');
+      if(mode==='dark') root.classList.add('theme-dark');
+      if(mode==='news') root.classList.add('theme-news');
+      modeButtons.forEach(b=>{
+        const active = b.dataset.mode===mode;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', String(active));
+      });
+      localStorage.setItem('mythos_theme', mode);
+    }
+
+    // initialize theme
+    setTheme(localStorage.getItem('mythos_theme') || 'dark');
+    modeButtons.forEach(b=> b.addEventListener('click',()=> setTheme(b.dataset.mode)));
+
+    // ==========================
+    // FONT SIZE (Copied from LMC 2400) - Not used directly in this minimal page, but the setter is available
+    // ==========================
+    const FONT_SCALE_KEY = 'mythos_font_scale';
+    function setRootFontSize(n) {
+      document.documentElement.style.setProperty('font-size', `${n}%`);
+      localStorage.setItem(FONT_SCALE_KEY, n);
+    }
+    setRootFontSize(parseInt(localStorage.getItem(FONT_SCALE_KEY) || '100', 10));
+
+    // ==========================
+    // DECK GRID RENDERING & ACTIONS
+    // ==========================
+    const $deckGrid = document.getElementById('deckGrid');
+
+    function renderDeckGrid() {
+      $deckGrid.innerHTML = ''; // Clear existing decks
+
+      DECK_DATA.forEach(deck => {
+        const deckCard = document.createElement('a');
+        deckCard.className = 'deck-card';
+        deckCard.href = deck.href; // Still keep href for accessibility/fallback
+        deckCard.dataset.deckId = deck.id; // Store ID for easy lookup
+        deckCard.dataset.title = deck.title; // Store title for window manager
+
+        deckCard.innerHTML = `
+          <div class="icon presentation">${cleanHtml(deck.icon || DEFAULT_HIEROGLYPH)}</div>
+          <h3>${cleanHtml(deck.title)}</h3>
+          <p>${cleanHtml(deck.description)}</p>
+          <button class="delete-btn" aria-label="Delete deck ${cleanHtml(deck.title)}" data-id="${deck.id}">✕</button>
+        `;
+        $deckGrid.appendChild(deckCard);
+      });
+
+      // Attach event listeners for opening in window
+      document.querySelectorAll('.deck-card').forEach(deckCard => {
+          // Remove previous listeners to prevent duplicates on re-render
+          deckCard.removeEventListener('click', handleDeckCardClick);
+          deckCard.addEventListener('click', handleDeckCardClick);
+      });
+
+      // Attach event listeners for delete buttons
+      document.querySelectorAll('.deck-card .delete-btn').forEach(deleteBtn => {
+        deleteBtn.addEventListener('click', (e) => {
+          e.preventDefault(); // Prevent opening the deck
+          e.stopPropagation(); // Stop event from bubbling to deck card click handler
+          const deckId = deleteBtn.dataset.id;
+          if (confirm(`Are you sure you want to delete "${DECK_DATA.find(d => d.id === deckId)?.title}"?`)) {
+            deleteDeck(deckId);
+          }
+        });
+      });
+    }
+
+    function handleDeckCardClick(e) {
+      e.preventDefault(); // Prevent default link navigation
+      const deckCard = e.currentTarget;
+      const href = deckCard.href;
+      const title = deckCard.dataset.title;
+      openDeckInWindow(href, title);
+    }
+
+    function deleteDeck(id) {
+      DECK_DATA = DECK_DATA.filter(deck => deck.id !== id);
+      saveDecks(DECK_DATA);
+      renderDeckGrid();
+      renderLauncherDecks($launcherSearch.value); // Re-render launcher too
+    }
+
+    // Initial render of decks
+    renderDeckGrid();
+
+    // ==========================
+    // ADD NEW DECK MODAL
+    // ==========================
+    const $addNewDeckBtn = document.getElementById('addNewDeckBtn');
+    const $addDeckModal = document.getElementById('addDeckModal');
+    const $cancelAddDeck = document.getElementById('cancelAddDeck');
+    const $saveNewDeck = document.getElementById('saveNewDeck');
+    const $newDeckTitle = document.getElementById('newDeckTitle');
+    const $newDeckUrl = document.getElementById('newDeckUrl');
+    const $newDeckIcon = document.getElementById('newDeckIcon');
+    const $newDeckDescription = document.getElementById('newDeckDescription');
+
+    function showAddDeckModal() {
+      $newDeckTitle.value = '';
+      $newDeckUrl.value = '';
+      $newDeckIcon.value = '';
+      $newDeckDescription.value = '';
+      $addDeckModal.style.display = 'flex';
+      $newDeckTitle.focus();
+    }
+
+    function hideAddDeckModal() {
+      $addDeckModal.style.display = 'none';
+    }
+
+    $addNewDeckBtn.addEventListener('click', showAddDeckModal);
+    $cancelAddDeck.addEventListener('click', hideAddDeckModal);
+
+    $saveNewDeck.addEventListener('click', () => {
+      const title = $newDeckTitle.value.trim();
+      const url = $newDeckUrl.value.trim();
+      const icon = $newDeckIcon.value.trim();
+      const description = $newDeckDescription.value.trim();
+
+      if (!title || !url) {
+        alert('Title and URL are required.');
+        return;
+      }
+
+      const newDeck = {
+        id: 'deck-' + Math.random().toString(36).slice(2, 11), // Generate unique ID
+        href: url,
+        title: title,
+        icon: icon || DEFAULT_HIEROGLYPH,
+        description: description || 'User-added deck'
+      };
+
+      DECK_DATA.push(newDeck);
+      saveDecks(DECK_DATA);
+      renderDeckGrid();
+      renderLauncherDecks($launcherSearch.value);
+      hideAddDeckModal();
+    });
+
+    // Close modal on outside click
+    $addDeckModal.addEventListener('click', (e) => {
+        if (e.target === $addDeckModal) {
+            hideAddDeckModal();
+        }
+    });
+
+    // ==========================
+    // IMPORT JSON MODAL
+    // ==========================
+    const $importBtn = document.getElementById('importJsonBtn');
+    const $importModal = document.getElementById('importDeckModal');
+    const $importFile = document.getElementById('importFile');
+    const $importTextarea = document.getElementById('importTextarea');
+    const $cancelImport = document.getElementById('cancelImport');
+    const $doImport = document.getElementById('doImport');
+
+    function showImportModal(){
+      $importFile.value = '';
+      $importTextarea.value = '';
+      $importModal.style.display = 'flex';
+    }
+    function hideImportModal(){
+      $importModal.style.display = 'none';
+    }
+    $importBtn.addEventListener('click', showImportModal);
+    $cancelImport.addEventListener('click', hideImportModal);
+    $importModal.addEventListener('click', (e)=>{ if(e.target=== $importModal) hideImportModal(); });
+
+    function iconFromTitle(t){
+      if(!t) return DEFAULT_HIEROGLYPH;
+      const parts = t.trim().split(/\s+/).slice(0,2);
+      const letters = parts.map(p=>p[0]).join('').toUpperCase();
+      return letters || DEFAULT_HIEROGLYPH;
+    }
+
+    function importJsonString(jsonStr){
+      let data;
+      try {
+        data = JSON.parse(jsonStr);
+      } catch(err){
+        alert('Invalid JSON.');
+        return;
+      }
+      const title = (data.meta && data.meta.title) ? data.meta.title : 'Imported Deck';
+      const id = 'deck-' + Math.random().toString(36).slice(2, 11);
+      const deck = {
+        id,
+        href: 'json:' + id,
+        title,
+        icon: iconFromTitle(title),
+        description: 'Imported deck (JSON)',
+        json: data
+      };
+      DECK_DATA.push(deck);
+      saveDecks(DECK_DATA);
+      renderDeckGrid();
+      renderLauncherDecks($launcherSearch.value);
+      hideImportModal();
+    }
+
+    $doImport.addEventListener('click', () => {
+      const file = $importFile.files && $importFile.files[0];
+      if (file){
+        const reader = new FileReader();
+        reader.onload = (e)=> importJsonString(String(e.target.result||''));
+        reader.onerror = ()=> alert('Failed to read file.');
+        reader.readAsText(file);
+        return;
+      }
+      const txt = $importTextarea.value.trim();
+      if (!txt){
+        alert('Paste JSON or choose a file.');
+        return;
+      }
+      importJsonString(txt);
+    });
+
+    // ==========================
+    // LAUNCHER (Adapted from LMC 2400)
+    // ==========================
+    const $launcher = document.getElementById('launcher');
+    const $launcherSearch = document.getElementById('launcherSearch');
+    const $launcherClose = document.getElementById('launcherClose');
+    const $launcherDecks = document.getElementById('launcherDecks');
+    const $launcherTrigger = document.getElementById('launcherTrigger'); // The 𓉗 icon in the titlebar
+
+    function renderLauncherDecks(filter = '') {
+      const filterLower = filter.toLowerCase();
+      $launcherDecks.innerHTML = DECK_DATA
+        .filter(deck =>
+            deck.title.toLowerCase().includes(filterLower) ||
+            deck.description.toLowerCase().includes(filterLower) ||
+            (deck.icon || DEFAULT_HIEROGLYPH).toLowerCase().includes(filterLower)
+        )
+        .map(deck => `
+          <div class="launcher-item" data-href="${deck.href}" data-title="${cleanHtml(deck.title)}">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="icon presentation" style="width:24px; height:24px; font-size:10px; border-radius:6px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black));">${cleanHtml(deck.icon || DEFAULT_HIEROGLYPH)}</div>
+              <span>${cleanHtml(deck.title)}</span>
+            </div>
+            <span class="badge">Deck</span>
+          </div>
+        `).join('');
+    }
+
+    function showLauncher() {
+      $launcher.style.display = 'flex';
+      $launcherSearch.value = '';
+      renderLauncherDecks(); // Render all decks initially
+      setTimeout(()=> $launcherSearch.focus(), 0);
+    }
+
+    function hideLauncher() {
+      $launcher.style.display = 'none';
+    }
+
+    $launcherTrigger.addEventListener('click', showLauncher);
+    $launcherClose.addEventListener('click', hideLauncher);
+
+    $launcherSearch.addEventListener('input', (e) => {
+      renderLauncherDecks(e.target.value);
+    });
+
+    $launcherSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault(); // Prevent form submission if any
+        const firstMatch = $launcherDecks.querySelector('.launcher-item');
+        if (firstMatch) {
+          firstMatch.click(); // Simulate click on the first item
+        }
+      }
+    });
+
+    // Delegate click for launcher items to open the deck
+    $launcherDecks.addEventListener('click', (e) => {
+      const item = e.target.closest('.launcher-item');
+      if (item) {
+        const href = item.dataset.href;
+        const title = item.dataset.title;
+        openDeckInWindow(href, title);
+        hideLauncher();
+      }
+    });
+
+    // Keyboard shortcuts for launcher
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        showLauncher();
+      }
+      if (e.key === 'Escape') {
+        hideLauncher();
+        hideAddDeckModal(); // Also close add deck modal
+      }
+    });
+
+    // ==========================
+    // IN-PAGE WINDOW MANAGER (Simplified for opening decks from LMC 2400)
+    // ==========================
+    let zCounter = 100; // Z-index counter for windows
+
+    function ensureLayers(){
+      let layer = document.getElementById('osLayer');
+      if(!layer){
+        layer = document.createElement('div');
+        layer.id = 'osLayer';
+        layer.className = 'os-windows-layer';
+        document.body.appendChild(layer);
+      }
+    }
+
+    function makeDraggable(win, handle){
+      let sx=0, sy=0, sl=0, st=0, dragging=false;
+      handle.addEventListener('mousedown', (e)=>{
+        if(e.target.closest('.window-dots')) return; // allow dots to click
+        dragging=true; sx=e.clientX; sy=e.clientY; const r=win.getBoundingClientRect(); sl=r.left; st=r.top; win.style.zIndex = (++zCounter).toString();
+        e.preventDefault();
+      });
+      window.addEventListener('mousemove',(e)=>{
+        if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy;
+        win.style.left = Math.max(0, sl+dx) + 'px'; // Prevent dragging off left edge
+        win.style.top = Math.max(48, st+dy) + 'px'; // Prevent dragging too far up under topbar
+      });
+      window.addEventListener('mouseup',()=> dragging=false);
+    }
+
+    function addDockItem(winId, title){
+      let dock = document.getElementById('osDock');
+      if(!dock){
+        dock = document.createElement('div');
+        dock.id = 'osDock';
+        dock.className = 'os-dock';
+        document.body.appendChild(dock);
+      }
+      const btn = document.createElement('button');
+      btn.className = 'dock-item';
+      btn.textContent = title || 'Window';
+      btn.dataset.win = winId;
+      btn.addEventListener('click',()=>{
+        const win = document.getElementById(winId);
+        if(!win) return;
+        win.style.display = 'block';
+        win.style.zIndex = (++zCounter).toString();
+        btn.remove();
+        if(dock.children.length === 0){ dock.remove(); }
+      });
+      dock.appendChild(btn);
+    }
+
+    function openDeckInWindow(url, title){
+      ensureLayers();
+      const layer = document.getElementById('osLayer');
+      const id = 'win_'+Math.random().toString(36).slice(2,8);
+      const win = document.createElement('div');
+      win.className = 'os-window';
+      win.id = id;
+      // Position new windows slightly offset
+      win.style.left = (80 + Math.random()*60) + 'px';
+      win.style.top = (80 + Math.random()*40) + 'px';
+      win.style.zIndex = (++zCounter).toString();
+
+      win.innerHTML =
+        '<div class="os-titlebar">\n' +
+        '  <div class="window-dots">\n' +
+        '    <span class="dot red" data-act="close"></span>\n' +
+        '    <span class="dot yellow" data-act="min"></span>\n' +
+        '    <span class="dot green" data-act="max"></span>\n' +
+        '  </div>\n' +
+        '  <div class="title">' + cleanHtml(title) + '</div>\n' +
+        '</div>\n' +
+        '<div class="os-content">\n' +
+        '  <iframe title="' + cleanHtml(title) + '"></iframe>\n' +
+        '</div>';
+      layer.appendChild(win);
+
+      const titlebar = win.querySelector('.os-titlebar');
+      makeDraggable(win, titlebar);
+
+      // Wire titlebar dots
+      titlebar.addEventListener('click',(e)=>{
+        const btn = e.target.closest('.dot');
+        if(!btn) return;
+        const act = btn.dataset.act;
+        if(act==='close'){ win.remove(); }
+        if(act==='min'){
+          win.style.display='none';
+          addDockItem(id, title);
+        }
+        if(act==='max'){ win.classList.toggle('max'); }
+      });
+
+      // If this is a JSON-backed deck, render a simple viewer via srcdoc
+      try {
+        if (url && url.startsWith('json:')){
+          const deckId = url.slice(5);
+          const deck = DECK_DATA.find(d=> d.id === deckId);
+          const data = deck && deck.json;
+          if (data){
+            const viewer = buildJsonViewerHTML(data, title);
+            const iframe = win.querySelector('iframe');
+            iframe.setAttribute('srcdoc', viewer);
+          }
+        } else {
+          // Fallback: normal URL
+          const iframe = win.querySelector('iframe');
+          iframe.setAttribute('src', url);
+        }
+      } catch(err){
+        console.error('Failed to load deck:', err);
+      }
+      return id;
+    }
+
+    function buildJsonViewerHTML(deckData, title){
+      const slides = Array.isArray(deckData.slides) ? deckData.slides : [];
+      const metaTitle = (deckData.meta && deckData.meta.title) ? deckData.meta.title : title;
+      const pages = slides.map(function(s, idx){
+        const theme = (s.theme||'').toString();
+        const quote = (s.quote||'').toString();
+        const motif = (s.motif||'').toString();
+        return (
+          '<section class="slide">' +
+          '  <div class="kicker">' + (idx+1) + ' / ' + slides.length + (motif ? ' — ' + motif : '') + '</div>' +
+          '  <h2>' + cleanHtml(theme) + '</h2>' +
+          '  <blockquote>' + cleanHtml(quote) + '</blockquote>' +
+          '</section>'
+        );
+      }).join('');
+      return (
+        '<!DOCTYPE html>\n' +
+        '<html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>' +
+        '<title>' + cleanHtml(metaTitle) + '</title>' +
+        '<style>\n' +
+        '  :root{ --bg:#0b0c10; --fg:#e6edf3; --muted:#9da7b3; --card:#11131a; --accent:#1FB8CD; }\n' +
+        '  *{box-sizing:border-box}\n' +
+        '  html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}\n' +
+        '  .deck{height:100%;display:grid;place-items:center}\n' +
+        '  .slide{width:92vw;height:92vh;padding:40px;border-radius:16px;background:var(--card);display:flex;flex-direction:column;gap:18px}\n' +
+        '  h2{font-size:32px;margin:0}\n' +
+        '  blockquote{margin:0;font-size:22px;color:var(--muted)}\n' +
+        '  .kicker{font:700 12px/1.2 system-ui, sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}\n' +
+        '  .nav{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12px}\n' +
+        '</style></head>\n' +
+        '<body>\n' +
+        '<div class="deck" id="deck">' + (pages || '') + '</div>\n' +
+        '<div class="nav">Use ← → or Space to navigate</div>\n' +
+        '<script>(function(){\n' +
+        '  const slides = Array.from(document.querySelectorAll(".slide")); let i = 0;\n' +
+        '  function show(n){ i=Math.max(0,Math.min(n,slides.length-1)); slides.forEach((s,j)=> s.style.display = j===i ? \'flex\':\'none\'); }\n' +
+        '  window.addEventListener(\'keydown\',e=>{ if([\'ArrowRight\',\'PageDown\',\' \'].includes(e.key)){e.preventDefault();show(i+1);} if([\'ArrowLeft\',\'PageUp\'].includes(e.key) || (e.key===\' \'&&e.shiftKey)){e.preventDefault();show(i-1);} });\n' +
+        '  show(0);\n' +
+        '})();<\/script>\n' +
+        '</body></html>'
+      );
+    }
+
+    // A small initial check for any existing dock items on page load
+    // (This part might be more relevant for multi-page apps where the dock persists)
+    document.getElementById('osDock')?.children.length === 0 && document.getElementById('osDock')?.remove();
+
+  </script>
+</body>
+</html>

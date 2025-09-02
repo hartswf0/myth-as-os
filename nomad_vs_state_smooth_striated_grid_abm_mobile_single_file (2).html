@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Nomad • Smooth ⇄ Striated — Full Title Film</title>
+  <style>
+    :root{
+      /* Saul Bass x John Whitney palette */
+      --bg:#0a0b0d; --ink:#f2f5f7; --muted:#a7b0bb;
+      --cream:#f2f2e9; --teal:#27b39c; --red:#e14b3b; --gold:#d6b85f; --blue:#5da7ff;
+      --state:#e35d5d; --nomad:#3ecf8e; --war:#6aa6ff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+    body{overflow:hidden}
+
+    /* Full-bleed stage */
+    #wrap{position:relative;display:flex;flex-direction:column;min-height:100dvh;height:100dvh;width:100vw}
+    #film,#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+    #film{z-index:1}
+    #stage{z-index:0;opacity:0.15;transition:opacity 800ms ease}
+
+    /* Letterbox for cinematic presence */
+    .letterbox{position:absolute;left:0;right:0;height:7dvh;background:#000;z-index:3;pointer-events:none;opacity:0.85}
+    .letterbox.top{top:0}
+    .letterbox.bottom{bottom:0}
+
+    /* Title cards */
+    .titlecard{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;z-index:4}
+    .caption{position:relative;max-width:900px;width:92%;margin:0 auto 8vh auto;text-align:center;color:var(--cream);filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6));}
+    .big{display:block;font-size:clamp(22px,4.6vw,46px);font-weight:900;letter-spacing:0.08em;margin-bottom:10px}
+    .quote{display:block;font-family:ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;font-size:clamp(16px,2.8vw,22px);line-height:1.6;font-style:italic}
+    .attrib{display:block;margin-top:10px;font-size:12px;color:#d7dccf}
+
+    /* HUD appears only after film */
+    .hud{position:absolute;left:10px;top:10px;display:flex;gap:8px;align-items:center;background:#0b0f14cc;border:1px solid #1b212b;border-radius:12px;padding:8px 10px;font-size:12px;color:#d6dde6;backdrop-filter:blur(6px);z-index:2}
+    .chip{display:inline-flex;gap:6px;align-items:center;background:#0f1319;border:1px solid #1c2330;border-radius:999px;padding:6px 8px;font-size:12px;color:#cbd5e1}
+    .dot{width:8px;height:8px;border-radius:50%}
+
+    /* Gate for audio user gesture */
+    .gate{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,11,13,0.96);z-index:6}
+    .gate .inner{max-width:760px;text-align:center;padding:24px}
+    .gate h1{margin:0 0 8px 0;font-weight:800;letter-spacing:0.06em}
+    .gate p{margin:6px 0 16px 0;color:var(--muted)}
+    .gate button{background:var(--red);border:0;color:#fff;font-weight:800;border-radius:999px;padding:12px 18px;font-size:14px;cursor:pointer}
+
+    /* Restart button (post-film) */
+    .restart-btn{position:absolute;bottom:12px;right:12px;background:var(--red);color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:900;cursor:pointer;z-index:2}
+
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <!-- canvases -->
+    <canvas id="film" aria-label="Title sequence canvas"></canvas>
+    <canvas id="stage" aria-label="Simulation canvas"></canvas>
+
+    <!-- cinematic matte bars -->
+    <div class="letterbox top"></div>
+    <div class="letterbox bottom"></div>
+
+    <!-- title copy over film -->
+    <div class="titlecard" id="titles">
+      <div class="caption">
+        <span class="big" id="tBig">SMOOTH SPACE</span>
+        <span class="quote" id="tQuote"></span>
+        <span class="attrib" id="tAttrib"></span>
+      </div>
+    </div>
+
+    <!-- post-film HUD + restart -->
+    <div class="hud hidden" id="hud">
+      <span class="chip"><span class="dot" style="background:var(--nomad)"></span>Nomads <b id="hNomad">0</b></span>
+      <span class="chip"><span class="dot" style="background:var(--state)"></span>State <b id="hState">0</b></span>
+      <span class="chip"><span class="dot" style="background:var(--war)"></span>War <b id="hWar">0</b></span>
+      <span class="chip">S₁ <b id="hS">0.00</b></span>
+      <span class="chip">T <b id="hT">0.00</b></span>
+      <span class="chip">Dₑ <b id="hD">0.00</b></span>
+    </div>
+    <button class="restart-btn hidden" id="restart">Restart Film</button>
+
+    <!-- audio permission gate -->
+    <div class="gate" id="gate">
+      <div class="inner">
+        <h1>Tap to Begin</h1>
+        <p>Full-screen title film with sound will play, then the world will run automatically.</p>
+        <button id="gateBtn">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const Film = document.getElementById('film');
+    const Stage = document.getElementById('stage');
+    const FX = Film.getContext('2d');
+    const GX = Stage.getContext('2d');
+    const titles = { big:q('#tBig'), quote:q('#tQuote'), attrib:q('#tAttrib'), wrap:q('#titles') };
+    const hud = q('#hud');
+    const restartBtn = q('#restart');
+    const gate = q('#gate');
+    const gateBtn = q('#gateBtn');
+
+    // DPR-fit canvases for sharpness
+    function fitCanvas(cv){ const dpr=Math.min(2,window.devicePixelRatio||1); const w=cv.clientWidth, h=cv.clientHeight; cv.width=Math.floor(w*dpr); cv.height=Math.floor(h*dpr); const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); }
+    function resize(){ fitCanvas(Film); fitCanvas(Stage); gridLayout(true); drawSim(); }
+    window.addEventListener('resize', resize);
+
+    // -------------------- AUDIO (Web Audio) --------------------
+    const audio = { ctx:null, master:null, filt:null, pad:[], sub:null, subG:null, noise:null, lastClick:0, shep:0,
+      start(){ if(this.ctx) return; const AC=window.AudioContext||window.webkitAudioContext; this.ctx=new AC(); this.master=this.ctx.createGain(); this.master.gain.value=0; this.master.connect(this.ctx.destination);
+        this.filt=this.ctx.createBiquadFilter(); this.filt.type='lowpass'; this.filt.frequency.value=900; this.filt.Q.value=0.7; this.filt.connect(this.master);
+        // Shepard-like pad (3 oscillators across octaves)
+        const base=65; for(let i=0;i<3;i++){ const o=this.ctx.createOscillator(); o.type='sine'; o.frequency.value=base*Math.pow(2,i); const g=this.ctx.createGain(); g.gain.value=0.0; o.connect(g).connect(this.filt); o.start(); this.pad.push({o,g}); }
+        // Sub drone
+        this.sub=this.ctx.createOscillator(); this.sub.type='triangle'; this.sub.frequency.value=52; this.subG=this.ctx.createGain(); this.subG.gain.value=0.0; this.sub.connect(this.subG).connect(this.master); this.sub.start();
+        // Noise buffer for clicks
+        const buf=this.ctx.createBuffer(1,this.ctx.sampleRate*0.08,this.ctx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(this.ctx.sampleRate*0.03)); this.noise=buf;
+        // Fade up master
+        this.master.gain.linearRampToValueAtTime(0.9,this.ctx.currentTime+1.2);
+      },
+      scene({cutoff=900, sub=0.4}){ if(!this.ctx) return; this.filt.frequency.linearRampToValueAtTime(cutoff,this.ctx.currentTime+0.6); this.subG.gain.linearRampToValueAtTime(sub,this.ctx.currentTime+0.6); },
+      update(dt, m){ if(!this.ctx) return; this.shep+=dt; const cyc=(this.shep%12)/12; const gains=[Math.sin(Math.PI*cyc),Math.sin(Math.PI*((cyc+0.33)%1)),Math.sin(Math.PI*((cyc+0.66)%1))]; for(let i=0;i<3;i++) this.pad[i].g.gain.value=0.15*Math.max(0,gains[i]); const rate=2+Math.max(0,m.D)*5; const now=this.ctx.currentTime; if(now-this.lastClick>1/Math.max(0.5,rate)){ this.lastClick=now; const src=this.ctx.createBufferSource(); src.buffer=this.noise; const hp=this.ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=1200; const g=this.ctx.createGain(); g.gain.value=0.08+Math.min(0.25,m.D*0.08); src.connect(hp).connect(g).connect(this.master); src.start(); src.stop(now+0.08); } }
+    };
+
+    // -------------------- FILM: scenes & Whitney/Bass visuals --------------------
+    const film = { active:false, t:0, i:0, scenes:[] };
+
+    film.scenes = [
+      { dur:7, big:'SMOOTH SPACE', quote:'“The nomad distributes himself in a smooth space; he occupies, inhabits, holds that space; that is his territorial principle.”', by:'Deleuze & Guattari',
+        colors:{bg:'#0a0b0d', a:'#27b39c', b:'#f2f2e9'},
+        enter(){ audio.scene({cutoff:900, sub:0.35}); setRegime('smooth'); setPop(120,6,10); setRates(0.2,0.55,0.5); Stage.style.opacity=0.1; },
+        draw(t){ drawWhitneyRings(FX,t,this.colors,26,0.0025); drawRadials(FX,t,this.colors); } },
+      { dur:7, big:'OCCUPATION → INHABITATION', quote:'“One distributes oneself in an open space… Occupation passes into inhabitation; holding becomes a principle.”', by:'Deleuze & Guattari (paraphrase)',
+        colors:{bg:'#0a0b0d', a:'#d6b85f', b:'#f2f2e9'},
+        enter(){ audio.scene({cutoff:1100, sub:0.3}); setRates(null,null,0.72); },
+        draw(t){ drawConcentricDots(FX,t,this.colors); } },
+      { dur:7, big:'STRIATED SPACE', quote:'“In striated space, one closes off a surface and allocates it; the State apparatus striates space.”', by:'Deleuze & Guattari',
+        colors:{bg:'#0a0b0d', a:'#e14b3b', b:'#f2f2e9'},
+        enter(){ audio.scene({cutoff:1450, sub:0.5}); setRegime('striated'); setPop(null,36,null); setRates(0.62,null,null); },
+        draw(t){ drawClosingGrid(FX,t,this.colors); } },
+      { dur:7, big:'WAR‑MACHINE', quote:'“The war machine develops a kind of smooth space… while the sedentary State apparatus passes its time by striating space.”', by:'Deleuze & Guattari',
+        colors:{bg:'#0a0b0d', a:'#5da7ff', b:'#f2f2e9'},
+        enter(){ audio.scene({cutoff:800, sub:0.6}); setRegime('tension'); setPop(null,null,26); setRates(null,0.85,null); },
+        draw(t){ drawSpirals(FX,t,this.colors); } },
+      { dur:6, big:'SMOOTH × STRIATED', quote:'Tension of thresholds: territory crystallises — or erodes back to flow.', by:'Commentary',
+        colors:{bg:'#0a0b0d', a:'#27b39c', b:'#e14b3b'},
+        enter(){ audio.scene({cutoff:1000, sub:0.45}); },
+        draw(t){ drawLissajousRects(FX,t,this.colors); } },
+      { dur:5, big:'A FILM ABOUT SPACE', quote:'Nomad • State • War‑Machine', by:'',
+        colors:{bg:'#0a0b0d', a:'#f2f2e9', b:'#f2f2e9'},
+        enter(){}, draw(t){ drawGrain(FX); }
+      }
+    ];
+
+    function setTitle(big, quote, by){ titles.big.textContent=big; titles.quote.textContent=quote; titles.attrib.textContent=by?('— '+by):''; }
+
+    function filmStart(){ film.active=true; film.t=0; film.i=0; for(const s of film.scenes){ s._entered=false; } Stage.style.opacity=0.12; hud.classList.add('hidden'); restartBtn.classList.add('hidden'); nextScene(); }
+    function filmEnd(){ film.active=false; titles.wrap.style.opacity=0; Stage.style.opacity=1; hud.classList.remove('hidden'); restartBtn.classList.remove('hidden'); }
+
+    function nextScene(){ const s=film.scenes[film.i]; setTitle(s.big,s.quote,s.by); s.enter && s.enter(); titles.wrap.style.opacity=1; }
+
+    function filmTick(dt){ if(!film.active) return; film.t+=dt; const s=film.scenes[film.i];
+      // clear
+      FX.clearRect(0,0,Film.width,Film.height); FX.fillStyle = s.colors.bg; FX.fillRect(0,0,Film.width,Film.height);
+      // draw motif
+      s.draw(performance.now()*0.001);
+      // grain
+      drawGrain(FX);
+      if(film.t>=s.dur){ film.t=0; film.i++; if(film.i>=film.scenes.length){ filmEnd(); return; } nextScene(); }
+    }
+
+    // -------------------- Motifs --------------------
+    function drawWhitneyRings(ctx,t,c,rings=24,drift=0.003){ const w=Film.clientWidth,h=Film.clientHeight,cx=w/2,cy=h/2; ctx.save(); for(let i=0;i<rings;i++){ const R=Math.min(w,h)*0.05 + i*Math.min(w,h)*0.022; const ang=t*0.4 + i*drift*50; ctx.strokeStyle = (i%2? c.a: c.b); ctx.lineWidth = (i%3===0? 3:1); ctx.beginPath(); ctx.arc(cx + Math.cos(ang)*8, cy + Math.sin(ang)*8, R, 0, Math.PI*2); ctx.stroke(); } ctx.restore(); }
+    function drawRadials(ctx,t,c){ const w=Film.clientWidth,h=Film.clientHeight,cx=w/2,cy=h/2; ctx.save(); ctx.translate(cx,cy); const N=56; for(let i=0;i<N;i++){ const a=(i/N)*Math.PI*2 + t*0.2; const len=Math.min(w,h)*0.42*(0.7+0.3*Math.sin(t*0.7+i)); ctx.strokeStyle=i%2? c.a: c.b; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len); ctx.stroke(); } ctx.restore(); }
+    function drawConcentricDots(ctx,t,c){ const w=Film.clientWidth,h=Film.clientHeight,cx=w/2,cy=h/2; ctx.save(); ctx.translate(cx,cy); for(let R=20; R<Math.max(w,h)*0.6; R+=18){ const count=Math.max(6,Math.floor(R/22)); for(let i=0;i<count;i++){ const a=i/count*Math.PI*2 + t*0.25; const x=Math.cos(a)*R, y=Math.sin(a)*R; ctx.fillStyle=(i%2? c.a:c.b); ctx.fillRect(x-1.5,y-1.5,3,3); } } ctx.restore(); }
+    function drawClosingGrid(ctx,t,c){ const w=Film.clientWidth,h=Film.clientHeight; ctx.save(); ctx.fillStyle=c.b; const bands=12; for(let i=0;i<bands;i++){ const p=i/bands; const x=p*w + Math.sin(t*0.8+i)*12; ctx.fillRect(x,0,2,h); } ctx.fillStyle=c.a; for(let i=0;i<bands;i++){ const p=i/bands; const y=p*h + Math.cos(t*0.7+i)*12; ctx.fillRect(0,y,w,2); } ctx.restore(); }
+    function drawSpirals(ctx,t,c){ const w=Film.clientWidth,h=Film.clientHeight,cx=w/2,cy=h/2; ctx.save(); ctx.translate(cx,cy); ctx.strokeStyle=c.a; ctx.lineWidth=2; for(let k=0;k<4;k++){ ctx.beginPath(); for(let th=0; th<Math.PI*4; th+=0.08){ const a=th+t*0.6+k*0.5; const R=6+a*22; ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R); } ctx.stroke(); } ctx.restore(); }
+    function drawLissajousRects(ctx,t,c){ const w=Film.clientWidth,h=Film.clientHeight; ctx.save(); const N=36; for(let i=0;i<N;i++){ const u=i/N; const x=(0.5+0.4*Math.sin(t*0.6 + u*6))*w; const y=(0.5+0.4*Math.sin(t*0.8 + u*7))*h; ctx.fillStyle = (i%2? c.a:c.b); const s=8+14*Math.sin(t*1.2+u*9); ctx.fillRect(x-s/2,y-s/2,s,s); } ctx.restore(); }
+    function drawGrain(ctx){ const w=Film.clientWidth,h=Film.clientHeight; ctx.save(); ctx.globalAlpha=0.06; for(let i=0;i<100;i++){ const x=Math.random()*w, y=Math.random()*h; ctx.fillStyle='#ffffff'; ctx.fillRect(x,y,1,1);} ctx.restore(); }
+
+    // -------------------- Simulation (auto-run after film) --------------------
+    let COLS=60, ROWS=34, CELL=12; const TYPE={SMOOTH:0,WALL:1}; const AG={NOMAD:0,STATE:1,WAR:2}; let grid=[], agents=[], tSim=0, last=performance.now(); let regimeMode='tension', rates={build:0.3,erode:0.5,camp:0.45}; let sDeltaAcc=0, lastD=performance.now(), lastDAmt=0;
+
+    function gridLayout(initial){ COLS=Math.max(40,Math.min(96,Math.floor(Stage.clientWidth/12))); ROWS=Math.max(24,Math.floor((Stage.clientHeight*0.65)/12)); CELL=Math.floor(Math.min(Stage.clientWidth/COLS,(Stage.clientHeight*0.68)/ROWS)); if(initial){ alloc(); seedWalls(0.06); populate(); } }
+    function alloc(){ grid = Array.from({length:ROWS},()=>Array.from({length:COLS},()=>({type:0,s:0,occ:0,inh:0}))); }
+    function seedWalls(fr){ for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) if(Math.random()<fr){ const c=grid[y][x]; c.type=1; c.s=Math.random()*0.5+0.2; } }
+    function add(kind,x=ri(COLS),y=ri(ROWS)){ agents.push({kind,x,y,dir:rand(Math.PI*2),linger:0}); }
+    function populate(){ agents=[]; for(let i=0;i<100;i++) add(AG.NOMAD); for(let i=0;i<8;i++) add(AG.STATE); for(let i=0;i<10;i++) add(AG.WAR); }
+
+    function setPop(nN,nS,nW){ if(nN!=null||nS!=null||nW!=null){ const want={[AG.NOMAD]:nN??count(AG.NOMAD),[AG.STATE]:nS??count(AG.STATE),[AG.WAR]:nW??count(AG.WAR)}; const have={0:0,1:0,2:0}; for(const a of agents) have[a.kind]++; for(const k of [AG.NOMAD,AG.STATE,AG.WAR]){ let extra=have[k]-want[k]; if(extra>0){ for(let i=agents.length-1;i>=0 && extra>0;i--) if(agents[i].kind===k){ agents.splice(i,1); extra--; } } else if(extra<0){ for(let i=0;i<(-extra);i++) add(k); } } } }
+    function count(kind){ return agents.filter(a=>a.kind===kind).length; }
+    function setRegime(name){ regimeMode=name; }
+    function setRates(b,e,c){ if(b!=null) rates.build=b; if(e!=null) rates.erode=e; if(c!=null) rates.camp=c; }
+
+    function wrap(v,m){ return v<0? v+m : (v>=m? v-m : v); }
+    function cellAt(x,y){ return grid[wrap(y,ROWS)][wrap(x,COLS)]; }
+
+    function regime(){ if(regimeMode==='striated') return {build:1.6, erode:0.7}; if(regimeMode==='smooth') return {build:0.7, erode:1.5}; return {build:1, erode:1}; }
+
+    function step(dt){ const R=regime(); const build=rates.build*R.build, erode=rates.erode*R.erode, campK=rates.camp; let sDelta=0; for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){ const c=grid[y][x]; const b=c.s; c.s=Math.max(0,c.s-0.005*dt); sDelta+=(c.s-b); c.occ=Math.max(0,c.occ-0.02*dt); c.inh=Math.max(0,c.inh-0.005*dt); c.type=(c.s>0.15)?1:0; }
+      for(const a of agents){ if(a.kind===AG.NOMAD){ if(Math.random()<0.35) a.dir+=rand(0.9,-0.9); const nx=wrap(a.x+Math.sign(Math.cos(a.dir)),COLS), ny=wrap(a.y+Math.sign(Math.sin(a.dir)),ROWS); const here=cellAt(a.x,a.y), nxt=cellAt(nx,ny); const pen=(nxt.s*2 + (nxt.type?2.5:0)); if(Math.random()<Math.max(0.15,0.8-pen)){ a.x=nx;a.y=ny; } if(Math.random()<0.6){ a.linger+=0.02*dt; here.occ=clamp(here.occ+0.015*dt,0,1);} else { a.linger=Math.max(0,a.linger-0.02*dt);} if(here.occ>0.35) here.inh=clamp(here.inh+campK*0.01*dt,0,1); if(here.s>0 && Math.random()<(erode*0.12*dt)){ const b=here.s; here.s=Math.max(0,here.s-0.05); sDelta+=(here.s-b);} }
+        else if(a.kind===AG.STATE){ if(Math.random()<0.1) a.dir=(Math.random()<0.5)?0:Math.PI/2; const sx=Math.round(Math.cos(a.dir)), sy=Math.round(Math.sin(a.dir)); a.x=wrap(a.x+sx,COLS); a.y=wrap(a.y+sy,ROWS); const c=cellAt(a.x,a.y); if(Math.random()<(build*0.35*dt)){ const b=c.s; c.s=clamp(c.s+0.12,0,1); sDelta+=(c.s-b); const lx=wrap(a.x+sx,COLS), ly=wrap(a.y+sy,ROWS); const c2=cellAt(lx,ly); const b2=c2.s; c2.s=clamp(c2.s+0.10,0,1); sDelta+=(c2.s-b2);} }
+        else { let best={x:a.x,y:a.y,s:cellAt(a.x,a.y).s}; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const cx=wrap(a.x+dx,COLS), cy=wrap(a.y+dy,ROWS); const s=cellAt(cx,cy).s; if(s>best.s) best={x:cx,y:cy,s}; } a.x=best.x; a.y=best.y; const c=cellAt(a.x,a.y); if(c.s>0 && Math.random()<(erode*0.5*dt)){ const b=c.s; c.s=Math.max(0,c.s-0.18); sDelta+=(c.s-b);} }
+      }
+      sDeltaAcc += sDelta; tSim+=dt; }
+
+    function drawSim(){ GX.clearRect(0,0,Stage.width,Stage.height); for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){ const c=grid[y][x]; const px=x*CELL, py=y*CELL; GX.fillStyle=c.type? 'rgba(42,49,64,1)':'rgba(14,16,21,1)'; GX.fillRect(px,py,CELL,CELL); if(c.s>0){ GX.fillStyle=`rgba(110,130,160,${0.22+0.55*c.s})`; GX.fillRect(px,py,CELL,CELL);} if(c.occ>0){ GX.fillStyle=`rgba(214,184,95,${0.20*Math.min(1,c.occ*2)})`; GX.fillRect(px,py,CELL,CELL);} if(c.inh>0.2){ GX.strokeStyle=`rgba(214,184,95,${0.12+Math.min(0.5,c.inh)})`; GX.lineWidth=1; GX.strokeRect(px+0.5,py+0.5,CELL-1,CELL-1);} }
+      // hairline grid
+      GX.strokeStyle='rgba(27,33,44,0.35)'; GX.lineWidth=1; for(let gx=0;gx<=COLS;gx++){ GX.beginPath(); GX.moveTo(gx*CELL+0.5,0); GX.lineTo(gx*CELL+0.5,Stage.height); GX.stroke(); } for(let gy=0;gy<=ROWS;gy++){ GX.beginPath(); GX.moveTo(0,gy*CELL+0.5); GX.lineTo(Stage.width,gy*CELL+0.5); GX.stroke(); }
+      // agents
+      for(const a of agents){ const px=a.x*CELL+CELL/2, py=a.y*CELL+CELL/2; if(a.kind===AG.NOMAD){ GX.fillStyle='rgba(62,207,142,1)'; GX.beginPath(); GX.arc(px,py,Math.max(2,CELL*0.28),0,Math.PI*2); GX.fill(); } else if(a.kind===AG.STATE){ GX.fillStyle='rgba(227,93,93,1)'; GX.fillRect(px-CELL*0.3,py-CELL*0.3,CELL*0.6,CELL*0.6);} else { GX.fillStyle='rgba(106,166,255,1)'; GX.beginPath(); GX.moveTo(px,py-CELL*0.33); GX.lineTo(px+CELL*0.33,py+CELL*0.33); GX.lineTo(px-CELL*0.33,py+CELL*0.33); GX.closePath(); GX.fill(); } }
+    }
+
+    function metrics(){ let sSum=0, clusters=0; for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) sSum+=grid[y][x].s; const S=sSum/(ROWS*COLS); const seen=new Set(); const key=(x,y)=>y*COLS+x; for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) if(grid[y][x].inh>0.45 && !seen.has(key(x,y))){ clusters++; const q=[[x,y]]; seen.add(key(x,y)); while(q.length){ const [cx,cy]=q.shift(); for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=wrap(cx+dx,COLS), ny=wrap(cy+dy,ROWS), k=key(nx,ny); if(grid[ny][nx].inh>0.45 && !seen.has(k)){ seen.add(k); q.push([nx,ny]); } } } } const T=clusters/50; const D=detert(); return {S,T,D}; }
+    function detert(){ const now=performance.now(), dt=(now-lastD)/1000; if(dt<0.5) return lastDAmt; const amt=-sDeltaAcc/Math.max(0.001,dt); sDeltaAcc=0; lastD=now; lastDAmt=amt; return amt; }
+
+    const H={ n:q('#hNomad'), s:q('#hState'), w:q('#hWar'), S:q('#hS'), T:q('#hT'), D:q('#hD') };
+    function hudUpdate(){ H.n.textContent=count(AG.NOMAD); H.s.textContent=count(AG.STATE); H.w.textContent=count(AG.WAR); const m=metrics(); H.S.textContent=m.S.toFixed(2); H.T.textContent=m.T.toFixed(2); H.D.textContent=m.D.toFixed(2); audio.update(0.016, m); }
+
+    // -------------------- Main loop --------------------
+    function loop(){ const now=performance.now(); const dt=(now-last)/1000; last=now; filmTick(dt); step(dt*0.6); drawSim(); hudUpdate(); requestAnimationFrame(loop); }
+
+    // -------------------- UI --------------------
+    gateBtn.addEventListener('click',()=>{ gate.style.display='none'; audio.start(); filmStart(); });
+    restartBtn.addEventListener('click',()=>{ // replay film fresh
+      titles.wrap.style.opacity=1; filmStart(); // reseed world too
+      alloc(); seedWalls(0.06); populate();
+    });
+
+    // -------------------- Boot --------------------
+    resize(); alloc(); seedWalls(0.06); populate(); loop();
+
+    // -------------------- utils --------------------
+    function q(s){ return document.querySelector(s); }
+    function rand(a=1,b=0){ return Math.random()*(a-b)+b; }
+    function ri(n){ return Math.floor(Math.random()*n); }
+    function clamp(v,min=0,max=1){ return v<min?min:(v>max?max:v); }
+  })();
+  </script>
+</body>
+</html>

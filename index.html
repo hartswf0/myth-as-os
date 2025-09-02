@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>𓉗 myth-operating-system — Decks</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50%25' y='60%25' dominant-baseline='middle' text-anchor='middle' font-size='90'%3E%F0%93%89%97%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;600&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ==========================
+     OS-LIKE THEME SYSTEM (Copied from LMC 2400)
+     Modes: light, dark, newspaper
+     ========================== */
+  :root {
+    /* Light Minimal */
+    --bg: #fcfcfc;
+    --bg-elev: #f0f0f0;
+    --text: #333;
+    --muted: #666;
+    --accent: #1a73e8; /* Google Blue */
+    --accent-weak: #e8f0fe; /* Light Google Blue */
+    --card: #ffffff;
+    --border: #ddd;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 6px 24px rgba(0,0,0,.06);
+    --link-rgb: 26, 115, 232; /* For shadows */
+  }
+  .theme-dark {
+    --bg: #1a1a1a;
+    --bg-elev: #2c2c2c;
+    --text: #e0e0e0;
+    --muted: #a0a0a0;
+    --accent: #8ab4f8; /* Google Blue Light */
+    --accent-weak: #2a3b5c; /* Darker blue for background */
+    --card: #202020;
+    --border: #444;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.45);
+    --link-rgb: 138, 180, 248; /* For shadows */
+  }
+  .theme-news {
+    --bg: #fdfae6; /* Creamy paper */
+    --bg-elev: #f7f0d6;
+    --text: #3e2723; /* Dark brown/sepia */
+    --muted: #6b665a;
+    --accent: #6a0505; /* Deep red ink */
+    --accent-weak: #ead9b2; /* Lighter sepia */
+    --card: #fffefd;
+    --border: #d8c39e;
+    --shadow: 0 1px 1px rgba(0,0,0,.04), 0 8px 18px rgba(0,0,0,.08);
+    --link-rgb: 106, 5, 5; /* For shadows */
+  }
+
+  /* Base Font Sizing & Global Defaults */
+  html { font-size: 100%; } /* Base for rem units, can be scaled by JS */
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    color: var(--text);
+    line-height: 1.3;
+    margin-top: 1.8em;
+    margin-bottom: 0.8em;
+    font-weight: 600;
+  }
+  h1 { font-size: 2.2rem; }
+  h2 { font-size: 1.8rem; }
+  h3 { font-size: 1.4rem; }
+  h4 { font-size: 1.2rem; }
+  h5 { font-size: 1.1rem; }
+
+  /* Links */
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+  .ext-link-icon {
+      vertical-align: text-top;
+      margin-left: 4px;
+      color: var(--muted);
+  }
+
+  /* Text elements */
+  p { margin-bottom: 1em; font-size: 1rem; }
+  ul, ol { margin-left: 1.5rem; margin-bottom: 1em; font-size: 1rem; }
+  li { margin-bottom: 0.5em; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  /* App Layout */
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100dvh;
+    padding: 0 12px;
+    box-sizing: border-box;
+  }
+
+  /* Top Bar (OS feel) */
+  .topbar {
+    position: sticky; top: 0; z-index: 5;
+    background: linear-gradient(180deg, var(--bg-elev), var(--bg));
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 10px 12px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+    transition: background 0.3s ease, border-bottom 0.3s ease, box-shadow 0.3s ease;
+  }
+  .window-dots { display: inline-flex; gap:6px; padding:4px 6px; }
+  .dot { width:10px; height:10px; border-radius:50%; border:1px solid var(--border); }
+  .dot.red{ background:#ff5f57; border-color:#e33e2f; }
+  .dot.yellow{ background:#febc2e; border-color:#d79a15; }
+  .dot.green{ background:#28c840; border-color:#1ea232; }
+  .title {
+    font-weight: 600;
+    letter-spacing: .2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .modes {
+    display: inline-flex; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; padding: 4px;
+    transition: background 0.3s ease, border 0.3s ease;
+  }
+  .modes button {
+    font: 500 0.75rem/1 'IBM Plex Mono', monospace; /* 12px */
+    letter-spacing: .2px;
+    padding: 8px 10px; border-radius: 999px; border: 0; background: transparent; color: var(--muted);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .modes button.active { background: var(--card); color: var(--accent); box-shadow: 0 0 0 3px rgba(var(--link-rgb), 0.3); }
+
+  /* Search (not used on this page, but good to keep from LMC for consistency) */
+  .search {
+    display: flex; gap: 8px; align-items: center;
+    background: var(--bg-elev); border:1px solid var(--border); border-radius: 999px; padding: 8px 10px;
+    transition: background 0.3s ease, border 0.3s ease;
+  }
+  .search input { flex:1; border:0; background:transparent; color:var(--text); outline:none; font: 500 1rem/1.2 'IBM Plex Sans', sans-serif; }
+  .kbd { font: 500 0.75rem/1 'IBM Plex Mono', monospace; color: var(--muted); background: var(--card); border:1px solid var(--border); border-radius: 6px; padding: 4px 6px; }
+
+  /* Tabs (bottom nav) - Not used on this page */
+  .tabs {
+    position: sticky; bottom: 0; left: 0; right: 0; z-index: 5;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    transition: background 0.3s ease, border-top 0.3s ease;
+  }
+  .tabs button {
+    appearance: none; border: 0; background: transparent; padding: 10px 6px; font:600 0.75rem 'IBM Plex Mono', monospace; color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .tabs button.active { color: var(--accent); box-shadow: inset 0 2px 0 var(--accent); }
+
+  /* Main Content Area */
+  main { padding: 10px 12px 20px; } /* Adjusted bottom padding as no bottom tabs here */
+
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin: 10px 0 14px;
+    transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+  }
+  .section h2 { font-size: 1.125rem; margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 4px; line-height: 1.5; } /* Re-added for the original subtitle */
+
+  /* Cards & lists */
+  .grid { display:grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  @media (max-width: 560px){ .two{ grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border:1px solid var(--border); border-radius: 14px; padding: 12px; box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 6px; font-size: 1rem; }
+  .meta { font: 500 0.8125rem 'IBM Plex Mono', monospace; color: var(--muted); line-height: 1.5; }
+  .meta p { margin-bottom: 0.5em; }
+
+  /* Deck Card styling for app-like icons */
+  .deck-card {
+    position: relative; /* For the delete button positioning */
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+    padding: 16px;
+    aspect-ratio: 1 / 1; /* Ensures square aspect ratio, consistent with 𓉗 container */
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px; text-decoration: none; color: var(--text);
+    box-shadow: var(--shadow);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .deck-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 36px rgba(0,0,0,.35); /* Stronger shadow on hover */
+    border-color: var(--accent); /* Accent color on hover */
+  }
+  .deck-card .icon {
+    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    font-weight: 800; letter-spacing: .03em;
+    font-family: 'IBM Plex Mono', monospace; /* Use the new monospace font for icons */
+    color: var(--card); /* Text color inside icon, contrasting with gradient */
+    font-size: 20px; /* Size for hieroglyph/initials to fit 40px container */
+    line-height: 1; /* Ensure single line height for symbols */
+    aspect-ratio: 1 / 1; /* Ensure icon container is also square */
+  }
+  /* Original presentation icon gradient, adapted to new accent variable */
+  .icon.presentation { background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black)); }
+
+  .deck-card h3 { margin: 0; font-size: 14px; text-align: center; color: var(--text); }
+  .deck-card p { margin: 0; font-size: 12px; color: var(--muted); text-align: center; }
+
+  /* Delete button for deck cards */
+  .deck-card .delete-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.2s ease, background 0.2s ease;
+  }
+  .deck-card:hover .delete-btn { opacity: 1; }
+  .deck-card .delete-btn:hover { background: var(--accent2); color: white; border-color: var(--accent2); } /* Red for delete */
+
+  footer { padding: 24px 16px 40px; color: var(--muted); font-size: 12px; text-align: center; }
+
+  /* Toolbar for add button */
+  .toolbar {
+    display: flex;
+    justify-content: flex-end; /* Align to the right for "add new" */
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  .btn {
+    border:1px solid var(--border); background: var(--card); border-radius: 10px; padding: 8px 10px;
+    font: 500 0.75rem 'IBM Plex Mono', monospace; color: var(--text);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn:hover { background: var(--bg-elev); }
+
+  /* Launcher overlay (Copied from LMC 2400) */
+  .launcher-overlay { position: fixed; inset: 0; background: color-mix(in oklab, var(--bg) 60%, transparent); backdrop-filter: blur(6px); display:none; align-items: center; justify-content: center; z-index: 10001; }
+  .launcher-panel { width: min(720px, 92vw); max-height: 80vh; background: var(--card); border:1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); display:flex; flex-direction:column; overflow:hidden; }
+  .launcher-head { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); }
+  .launcher-head input { flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background: var(--bg); color: var(--text); }
+  .launcher-col { padding:12px; overflow:auto; }
+  .launcher-col h4 { margin:6px 0 10px; font-size: 1.125rem; }
+  .launcher-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background: var(--bg-elev); cursor:pointer; }
+  .launcher-item:hover { background: color-mix(in srgb, var(--bg-elev) 80%, var(--accent-weak)); border-color: var(--accent); }
+  .launcher-item[aria-disabled="true"] { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+  .badge { font: 700 0.625rem 'IBM Plex Mono', monospace; color: var(--muted); background: var(--bg); border:1px solid var(--border); padding:2px 6px; border-radius:999px; }
+  .icon-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:2px 6px; border:1px solid var(--border); border-radius:999px; font: 700 0.6875rem 'IBM Plex Mono', monospace; color: var(--muted); background: var(--bg); cursor:pointer; }
+  .icon-btn:hover { background: var(--bg-elev); }
+
+  /* In-page OS shell (windows + dock) - Copied from LMC 2400, simplified for decks */
+  .os-windows-layer { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+  .os-window { position: absolute; min-width: 320px; min-height: 220px; width: 560px; height: 420px; background: var(--card); border:1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; pointer-events: auto; }
+  .os-titlebar { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid var(--border); background: var(--bg-elev); cursor: move; }
+  .os-titlebar .window-dots { padding:0; }
+  .os-titlebar .title { font-weight:600; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .os-content { position:absolute; top:38px; bottom:0; left:0; right:0; display:grid; grid-template-columns: 1fr; gap:0; } /* Simplified for iframe only */
+  .os-content iframe { width:100%; height:100%; border:0; background:var(--card); }
+  .os-window.max { left:0 !important; top:48px !important; width:100% !important; height: calc(100% - 56px) !important; border-radius: 0; }
+  .os-dock { position: fixed; left:50%; transform:translateX(-50%); bottom:10px; display:flex; gap:8px; padding:6px 10px; background: var(--bg); border:1px solid var(--border); border-radius: 999px; box-shadow: var(--shadow); pointer-events:auto; z-index: 10000; }
+  .dock-item { padding:4px 8px; border:1px solid var(--border); border-radius: 999px; background: var(--card); cursor: pointer; }
+
+  /* Context menu for deck cards */
+  .context-menu {
+    position: fixed;
+    z-index: 10003;
+    display: none;
+    min-width: 190px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .context-menu .item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font: 500 0.85rem 'IBM Plex Sans', sans-serif;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .context-menu .item:hover { background: var(--bg-elev); }
+  .context-menu .sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* Modal styling (for add deck form) */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in oklab, var(--bg) 60%, transparent);
+    backdrop-filter: blur(6px);
+    display: none; /* Hidden by default */
+    align-items: center; justify-content: center;
+    z-index: 10002;
+  }
+  .modal-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    width: min(500px, 90vw);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .modal-content h3 { margin: 0 0 10px; }
+  .modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .modal-content input[type="text"],
+  .modal-content textarea,
+  .modal-content select { /* Added select */
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-elev);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  .modal-content input[type="text"]:focus,
+  .modal-content textarea:focus,
+  .modal-content select:focus { /* Added select */
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--link-rgb), 0.3);
+  }
+  .modal-content textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .modal-actions .btn {
+    padding: 10px 15px;
+  }
+  .modal-actions .btn.accent {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .modal-actions .btn.accent:hover {
+    background: color-mix(in srgb, var(--accent) 80%, black);
+  }
+
+
+  /* Media Queries (Copied from LMC 2400, adjusted for this page) */
+  @media (min-width: 720px) { h1 { font-size: 26px; } .grid { gap: 16px; } }
+  @media (max-width: 600px) {
+      .app {
+          max-width: 100%;
+          padding: 0;
+      }
+      main { padding: 10px 0 20px 8px; }
+
+      .topbar {
+          padding: 8px;
+          grid-template-columns: 1fr auto;
+          gap: 8px;
+      }
+      .topbar .window-dots { display: none; }
+      .topbar .modes { display: none; }
+      .topbar .title { font-size: 1rem; margin-left: 0; }
+
+      .deck-card {
+        padding: 12px;
+        gap: 8px;
+        border-radius: 12px;
+      }
+      .deck-card .icon {
+        width: 32px; height: 32px; border-radius: 8px; font-size: 1.1em;
+      }
+      .deck-card h3 { font-size: 13px; }
+      .deck-card p { font-size: 11px; }
+
+      /* Delete button for mobile */
+      .deck-card .delete-btn {
+        opacity: 1; /* Always visible on mobile for easier interaction */
+        width: 28px; height: 28px;
+        font-size: 16px;
+      }
+
+      /* OS-like Windows / Launcher for mobile */
+      .os-window, .launcher-panel, .modal-overlay {
+          width: 100% !important;
+          height: 100dvh !important;
+          left: 0 !important;
+          top: 0 !important;
+          border-radius: 0 !important;
+          min-width: unset;
+          min-height: unset;
+      }
+      .os-dock { display: none; }
+      .os-content { grid-template-columns: 1fr; }
+      .launcher-body { grid-template-columns: 1fr; }
+      .launcher-col:first-child { border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body class="theme-dark">
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="window-dots" aria-hidden="true"></div>
+      <div class="title"><span id="launcherTrigger" title="Open Launcher" style="cursor:pointer; margin-right:6px;">𓉗</span> myth-operating-system</div>
+      <div class="modes" role="tablist" aria-label="Theme">
+        <button class="active" data-mode="dark" role="tab" aria-selected="true" title="Dark Mode">Dark</button>
+        <button data-mode="light" role="tab" aria-selected="false" title="Light Mode Minimal">Light</button>
+        <button data-mode="news" role="tab" aria-selected="false" title="Newspaper Mode">News</button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="section">
+        <h2>Decks</h2>
+        <p class="subtitle">Language is the root process that scripts reality; media are the engines that run it.</p>
+
+        <div class="toolbar">
+            <button class="btn" id="addNewDeckBtn">Add New Deck</button>
+        </div>
+
+        <div class="grid" id="deckGrid">
+          <!-- Deck cards will be dynamically loaded here by JS -->
+        </div>
+        <!-- Context menu for deck cards -->
+        <div id="deckContextMenu" class="context-menu" role="menu" aria-hidden="true">
+          <div class="item" id="ctxEdit" role="menuitem">Edit…</div>
+          <div class="sep" aria-hidden="true"></div>
+          <div class="item" id="ctxCopyLink" role="menuitem">Copy Link</div>
+          <div class="item" id="ctxCopyTitle" role="menuitem">Copy Title</div>
+          <div class="sep" aria-hidden="true"></div>
+          <div class="item" id="ctxDuplicate" role="menuitem">Duplicate</div>
+          <div class="item" id="ctxDelete" role="menuitem">Delete</div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Add or remove decks by editing this index. Want auto-discovery of files? I can generate tiles for all .html/.pdf here.
+    </footer>
+
+    <!-- Launcher overlay -->
+    <div id="launcher" class="launcher-overlay" aria-hidden="true">
+      <div class="launcher-panel" role="dialog" aria-label="Launcher">
+        <div class="launcher-head">
+          <input id="launcherSearch" type="text" placeholder="Search decks (Cmd+K)" aria-label="Search decks"/>
+          <button class="icon-btn" id="launcherClose" title="Close Launcher">✕</button>
+        </div>
+        <div class="launcher-body">
+          <div class="launcher-col">
+            <h4>Decks</h4>
+            <div id="launcherDecks">
+              <!-- Decks will be injected here by JS -->
+            </div>
+          </div>
+          <div class="launcher-col">
+            <h4>Info</h4>
+            <div class="launcher-item" data-launch="about" aria-disabled="true" title="About this OS">About <span class="badge">soon</span></div>
+            <div class="launcher-item" data-launch="settings" aria-disabled="true" title="Settings">Settings <span class="badge">soon</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add New Deck Modal -->
+    <div id="addDeckModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="addDeckModalTitle">
+        <h3 id="addDeckModalTitle">Add New Deck</h3>
+        <label for="newDeckTitle">Title</label>
+        <input type="text" id="newDeckTitle" placeholder="e.g., My New Presentation" required />
+
+        <label for="newDeckUrl">URL</label>
+        <input type="text" id="newDeckUrl" placeholder="e.g., my-new-presentation.html" required />
+
+        <label for="newDeckIcon">Select Icon</label>
+        <select id="newDeckIcon" aria-label="Select an icon for the new deck"></select>
+
+        <label for="newDeckDescription">Description</label>
+        <textarea id="newDeckDescription" placeholder="e.g., My awesome new single-file deck"></textarea>
+
+        <div class="modal-actions">
+          <button class="btn" id="cancelAddDeck">Cancel</button>
+          <button class="btn accent" id="saveNewDeck">Add Deck</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Helper function to safely insert HTML (prevents XSS if data were user-generated)
+    function cleanHtml(htmlString) {
+      const div = document.createElement('div');
+      div.innerHTML = htmlString;
+      return div.innerHTML;
+    }
+
+    // List of hieroglyphs/animal icons provided by the user, plus the default '𓏲'
+    const HIEROGLYPH_ICONS = [
+      '𓏲', // Default hieroglyph for documents
+      '𓆏', '𓆉', '𓃰', '𓅰', '𓅬', '𓅭', '𓅮', '𓅯', '𓆝', '𓆡', '𓇼',
+      '𐂂', '𐂃', '𐂄', '𐂅'
+    ];
+
+    function getRandomIcon() {
+      return HIEROGLYPH_ICONS[Math.floor(Math.random() * HIEROGLYPH_ICONS.length)];
+    }
+
+    // Known presentations in this folder (used to seed and merge on load)
+    const AVAILABLE_DECKS = [
+      { href: 'roland-barthes-00.html', title: 'Roland Barthes 00' },
+      { href: 'world_of_wrestling_deck_v_2_single_file (1).html', title: 'World of Wrestling v2 (single-file)' },
+      { href: 'barthes_world_of_wrestling_saul_bass_concrete_poetry_deck.html', title: 'Saul Bass Concrete Poetry' },
+      { href: 'barthes_world_of_wrestling_saul_bass_concrete_poetry_deck (1).html', title: 'Saul Bass Concrete Poetry (copy)' },
+      { href: 'myth_engines_saul_bass_whitney_deck_single_file.html', title: 'Myth Engines — Saul Bass + Whitney' },
+      { href: 'kayfabe_presentation.html', title: 'Kayfabe Presentation' },
+      { href: 'prop-00.html', title: 'Prop 00' },
+      { href: 'nomad_vs_state_smooth_striated_grid_abm_mobile_single_file (2).html', title: 'Nomad vs State — Smooth/Striated (mobile)' },
+      { href: 'serres_territorial_possession_simulator_mobile_single_file (4).html', title: 'Serres — Territorial Possession Simulator (mobile)' },
+      { href: 'virilio_circulation_logistics_mobile_abm_artifact (3).html', title: 'Virilio — Circulation Logistics (mobile)' },
+      { href: 'index00.html', title: 'Index 00 (OS prototype)' },
+      { href: 'index02.html', title: 'Index 02 (experimental)' },
+      { href: 'index.html', title: 'Deck Manager (this page)' }
+    ];
+
+    // Initial hardcoded decks (if storage is empty)
+    const INITIAL_DECKS = AVAILABLE_DECKS
+      .filter(d => d.href !== 'index.html') // exclude self by default
+      .map((d, i) => ({
+        id: 'deck-' + String(i + 1).padStart(3,'0'),
+        href: d.href,
+        title: d.title,
+        icon: getRandomIcon(),
+        description: 'Single-file deck'
+      }));
+
+    let DECK_DATA = [];
+
+    // ==========================
+    // LOCAL STORAGE MANAGEMENT
+    // ==========================
+    const LOCAL_STORAGE_KEY = 'mythos_decks';
+
+    function loadDecks() {
+      try {
+        const storedDecks = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedDecks) {
+          const parsed = JSON.parse(storedDecks);
+          // Merge in any AVAILABLE_DECKS not already present (by href)
+          const hrefSet = new Set(parsed.map(d => d.href));
+          const additions = AVAILABLE_DECKS
+            .filter(d => d.href !== 'index.html')
+            .filter(d => !hrefSet.has(d.href))
+            .map(d => ({
+              id: 'deck-' + Math.random().toString(36).slice(2, 11),
+              href: d.href,
+              title: d.title,
+              icon: getRandomIcon(),
+              description: 'Single-file deck'
+            }));
+          if (additions.length) {
+            const merged = parsed.concat(additions);
+            saveDecks(merged);
+            return merged;
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error("Error loading decks from localStorage:", e);
+      }
+      // If no stored decks or error, use initial decks and save them
+      saveDecks(INITIAL_DECKS);
+      return INITIAL_DECKS;
+    }
+
+    function saveDecks(decksToSave) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(decksToSave));
+      } catch (e) {
+        console.error("Error saving decks to localStorage:", e);
+      }
+    }
+
+    // Initialize DECK_DATA on script load
+    DECK_DATA = loadDecks();
+
+    // ==========================
+    // THEME TOGGLER (Copied from LMC 2400)
+    // ==========================
+    const root = document.body;
+    const modeButtons = document.querySelectorAll('.modes button');
+
+    function setTheme(mode){
+      root.classList.remove('theme-dark','theme-news');
+      if(mode==='dark') root.classList.add('theme-dark');
+      if(mode==='news') root.classList.add('theme-news');
+      modeButtons.forEach(b=>{
+        const active = b.dataset.mode===mode;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', String(active));
+      });
+      localStorage.setItem('mythos_theme', mode);
+    }
+
+    // initialize theme
+    setTheme(localStorage.getItem('mythos_theme') || 'dark');
+    modeButtons.forEach(b=> b.addEventListener('click',()=> setTheme(b.dataset.mode)));
+
+    // ==========================
+    // FONT SIZE (Copied from LMC 2400) - Not used directly in this minimal page, but the setter is available
+    // ==========================
+    const FONT_SCALE_KEY = 'mythos_font_scale';
+    function setRootFontSize(n) {
+      document.documentElement.style.setProperty('font-size', `${n}%`);
+      localStorage.setItem(FONT_SCALE_KEY, n);
+    }
+    setRootFontSize(parseInt(localStorage.getItem(FONT_SCALE_KEY) || '100', 10));
+
+    // ==========================
+    // DECK GRID RENDERING & ACTIONS
+    // ==========================
+    const $deckGrid = document.getElementById('deckGrid');
+
+    // ==========================
+    // CONTEXT MENU (deck cards)
+    // ==========================
+    const $ctxMenu = document.getElementById('deckContextMenu');
+    const $ctxEdit = document.getElementById('ctxEdit');
+    const $ctxCopyLink = document.getElementById('ctxCopyLink');
+    const $ctxCopyTitle = document.getElementById('ctxCopyTitle');
+    const $ctxDuplicate = document.getElementById('ctxDuplicate');
+    const $ctxDelete = document.getElementById('ctxDelete');
+    let currentCtxDeckId = null;
+
+    function hideContextMenu(){
+      if($ctxMenu){
+        $ctxMenu.style.display = 'none';
+        $ctxMenu.setAttribute('aria-hidden','true');
+      }
+      currentCtxDeckId = null;
+    }
+
+    function showContextMenu(x, y, deckId){
+      if(!$ctxMenu) return;
+      currentCtxDeckId = deckId;
+      // Position within viewport
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const menuWidth = 200, menuHeight = 168; // approx
+      const left = Math.min(x, vw - menuWidth - 8);
+      const top = Math.min(y, vh - menuHeight - 8);
+      $ctxMenu.style.left = left + 'px';
+      $ctxMenu.style.top = top + 'px';
+      $ctxMenu.style.display = 'block';
+      $ctxMenu.setAttribute('aria-hidden','false');
+    }
+
+    function getDeckById(id){
+      return DECK_DATA.find(d => d.id === id);
+    }
+
+    function renderDeckGrid() {
+      $deckGrid.innerHTML = ''; // Clear existing decks
+
+      DECK_DATA.forEach(deck => {
+        const deckCard = document.createElement('a');
+        deckCard.className = 'deck-card';
+        deckCard.href = deck.href; // Still keep href for accessibility/fallback
+        deckCard.dataset.deckId = deck.id; // Store ID for easy lookup
+        deckCard.dataset.title = deck.title; // Store title for window manager
+
+        deckCard.innerHTML = `
+          <div class="icon presentation">${cleanHtml(deck.icon)}</div>
+          <h3>${cleanHtml(deck.title)}</h3>
+          <p>${cleanHtml(deck.description)}</p>
+          <button class="delete-btn" aria-label="Delete deck ${cleanHtml(deck.title)}" data-id="${deck.id}">✕</button>
+        `;
+        $deckGrid.appendChild(deckCard);
+      });
+
+      // Attach event listeners for opening in window
+      document.querySelectorAll('.deck-card').forEach(deckCard => {
+          // Remove previous listeners to prevent duplicates on re-render
+          deckCard.removeEventListener('click', handleDeckCardClick);
+          deckCard.addEventListener('click', handleDeckCardClick);
+
+          // Right-click context menu
+          deckCard.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const id = deckCard.dataset.deckId;
+            showContextMenu(e.clientX, e.clientY, id);
+          });
+      });
+
+      // Attach event listeners for delete buttons
+      document.querySelectorAll('.deck-card .delete-btn').forEach(deleteBtn => {
+        deleteBtn.addEventListener('click', (e) => {
+          e.preventDefault(); // Prevent opening the deck
+          e.stopPropagation(); // Stop event from bubbling to deck card click handler
+          const deckId = deleteBtn.dataset.id;
+          const deckTitle = DECK_DATA.find(d => d.id === deckId)?.title || 'this deck';
+          if (confirm(`Are you sure you want to delete "${deckTitle}"?`)) {
+            deleteDeck(deckId);
+          }
+        });
+      });
+    }
+
+    function handleDeckCardClick(e) {
+      e.preventDefault(); // Prevent default link navigation
+      const deckCard = e.currentTarget;
+      const href = deckCard.href;
+      const title = deckCard.dataset.title;
+      openDeckInWindow(href, title);
+    }
+
+    function deleteDeck(id) {
+      DECK_DATA = DECK_DATA.filter(deck => deck.id !== id);
+      saveDecks(DECK_DATA);
+      renderDeckGrid();
+      renderLauncherDecks($launcherSearch.value); // Re-render launcher too
+    }
+
+    // Initial render of decks
+    renderDeckGrid();
+
+    // Context menu action handlers
+    async function copyToClipboard(text){
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (err) {
+        // Fallback: create temp textarea
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch(_){}
+        ta.remove();
+      }
+    }
+
+    $ctxCopyLink?.addEventListener('click', async () => {
+      const deck = getDeckById(currentCtxDeckId);
+      if (!deck) return hideContextMenu();
+      const absUrl = new URL(deck.href, location.href).href;
+      await copyToClipboard(absUrl);
+      hideContextMenu();
+    });
+
+    $ctxCopyTitle?.addEventListener('click', async () => {
+      const deck = getDeckById(currentCtxDeckId);
+      if (!deck) return hideContextMenu();
+      await copyToClipboard(deck.title);
+      hideContextMenu();
+    });
+
+    $ctxDuplicate?.addEventListener('click', () => {
+      const deck = getDeckById(currentCtxDeckId);
+      if (!deck) return hideContextMenu();
+      const copy = {
+        ...deck,
+        id: 'deck-' + Math.random().toString(36).slice(2, 11),
+        title: deck.title.endsWith(' (copy)') ? deck.title : deck.title + ' (copy)'
+      };
+      DECK_DATA.push(copy);
+      saveDecks(DECK_DATA);
+      renderDeckGrid();
+      renderLauncherDecks($launcherSearch.value);
+      hideContextMenu();
+    });
+
+    $ctxDelete?.addEventListener('click', () => {
+      const deck = getDeckById(currentCtxDeckId);
+      if (!deck) return hideContextMenu();
+      if (confirm(`Delete "${deck.title}"?`)) {
+        deleteDeck(deck.id);
+      }
+      hideContextMenu();
+    });
+
+    // Edit deck via modal (reuse Add Deck modal)
+    let editingDeckId = null;
+
+    function openEditDeckModal(deck){
+      editingDeckId = deck.id;
+      document.getElementById('addDeckModalTitle').textContent = 'Edit Deck';
+      document.getElementById('saveNewDeck').textContent = 'Save Changes';
+      $newDeckTitle.value = deck.title;
+      $newDeckUrl.value = deck.href;
+      populateIconSelect();
+      $newDeckIcon.value = deck.icon;
+      $newDeckDescription.value = deck.description || '';
+      $addDeckModal.style.display = 'flex';
+      $newDeckTitle.focus();
+    }
+
+    function resetAddDeckModal(){
+      editingDeckId = null;
+      document.getElementById('addDeckModalTitle').textContent = 'Add New Deck';
+      document.getElementById('saveNewDeck').textContent = 'Add Deck';
+      $newDeckTitle.value = '';
+      $newDeckUrl.value = '';
+      $newDeckDescription.value = '';
+    }
+
+    $ctxEdit?.addEventListener('click', () => {
+      const deck = getDeckById(currentCtxDeckId);
+      if (!deck) return hideContextMenu();
+      openEditDeckModal(deck);
+      hideContextMenu();
+    });
+
+    // Hide context menu on outside interactions
+    document.addEventListener('click', (e) => {
+      if($ctxMenu && e.target instanceof Element && !e.target.closest('#deckContextMenu')){
+        hideContextMenu();
+      }
+    });
+    window.addEventListener('scroll', hideContextMenu, true);
+    window.addEventListener('resize', hideContextMenu);
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') hideContextMenu(); });
+
+    // ==========================
+    // ADD NEW DECK MODAL
+    // ==========================
+    const $addNewDeckBtn = document.getElementById('addNewDeckBtn');
+    const $addDeckModal = document.getElementById('addDeckModal');
+    const $cancelAddDeck = document.getElementById('cancelAddDeck');
+    const $saveNewDeck = document.getElementById('saveNewDeck');
+    const $newDeckTitle = document.getElementById('newDeckTitle');
+    const $newDeckUrl = document.getElementById('newDeckUrl');
+    const $newDeckIcon = document.getElementById('newDeckIcon'); // Now a <select> element
+    const $newDeckDescription = document.getElementById('newDeckDescription');
+
+    function populateIconSelect() {
+      $newDeckIcon.innerHTML = ''; // Clear previous options
+      HIEROGLYPH_ICONS.forEach(icon => {
+        const option = document.createElement('option');
+        option.value = icon;
+        option.textContent = icon;
+        $newDeckIcon.appendChild(option);
+      });
+      // Set default selected icon for new decks to the first one in the list
+      if (HIEROGLYPH_ICONS.length > 0) {
+        $newDeckIcon.value = HIEROGLYPH_ICONS[0];
+      }
+    }
+
+    function showAddDeckModal() {
+      resetAddDeckModal();
+      populateIconSelect(); // Populate the select dropdown each time
+      $addDeckModal.style.display = 'flex';
+      $newDeckTitle.focus();
+    }
+
+    function hideAddDeckModal() {
+      $addDeckModal.style.display = 'none';
+    }
+
+    $addNewDeckBtn.addEventListener('click', showAddDeckModal);
+    $cancelAddDeck.addEventListener('click', hideAddDeckModal);
+    // When closing modal, ensure state reset
+    $cancelAddDeck.addEventListener('click', resetAddDeckModal);
+    $addDeckModal.addEventListener('click', (e) => {
+      if (e.target === $addDeckModal) {
+        hideAddDeckModal();
+        resetAddDeckModal();
+      }
+    });
+
+    $saveNewDeck.addEventListener('click', () => {
+      const title = $newDeckTitle.value.trim();
+      const url = $newDeckUrl.value.trim();
+      const icon = $newDeckIcon.value; // Get value from select
+      const description = $newDeckDescription.value.trim();
+
+      if (!title || !url) {
+        alert('Title and URL are required.');
+        return;
+      }
+
+      if (editingDeckId) {
+        // Update existing deck
+        const idx = DECK_DATA.findIndex(d => d.id === editingDeckId);
+        if (idx !== -1) {
+          DECK_DATA[idx] = { ...DECK_DATA[idx], title, href: url, icon, description: description || '' };
+          saveDecks(DECK_DATA);
+          renderDeckGrid();
+          renderLauncherDecks($launcherSearch.value);
+        }
+        hideAddDeckModal();
+        resetAddDeckModal();
+      } else {
+        // Create new deck
+        const newDeck = {
+          id: 'deck-' + Math.random().toString(36).slice(2, 11), // Generate unique ID
+          href: url,
+          title: title,
+          icon: icon, // Use selected icon
+          description: description || 'User-added deck'
+        };
+        DECK_DATA.push(newDeck);
+        saveDecks(DECK_DATA);
+        renderDeckGrid();
+        renderLauncherDecks($launcherSearch.value);
+        hideAddDeckModal();
+      }
+    });
+
+    // Close modal on outside click
+    $addDeckModal.addEventListener('click', (e) => {
+        if (e.target === $addDeckModal) {
+            hideAddDeckModal();
+        }
+    });
+
+    // ==========================
+    // LAUNCHER (Adapted from LMC 2400)
+    // ==========================
+    const $launcher = document.getElementById('launcher');
+    const $launcherSearch = document.getElementById('launcherSearch');
+    const $launcherClose = document.getElementById('launcherClose');
+    const $launcherDecks = document.getElementById('launcherDecks');
+    const $launcherTrigger = document.getElementById('launcherTrigger'); // The 𓉗 icon in the titlebar
+
+    function renderLauncherDecks(filter = '') {
+      const filterLower = filter.toLowerCase();
+      $launcherDecks.innerHTML = DECK_DATA
+        .filter(deck =>
+            deck.title.toLowerCase().includes(filterLower) ||
+            deck.description.toLowerCase().includes(filterLower) ||
+            deck.icon.toLowerCase().includes(filterLower)
+        )
+        .map(deck => `
+          <div class="launcher-item" data-href="${deck.href}" data-title="${cleanHtml(deck.title)}">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="icon presentation" style="width:24px; height:24px; font-size:10px; border-radius:6px; background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black));">${cleanHtml(deck.icon)}</div>
+              <span>${cleanHtml(deck.title)}</span>
+            </div>
+            <span class="badge">Deck</span>
+          </div>
+        `).join('');
+    }
+
+    function showLauncher() {
+      $launcher.style.display = 'flex';
+      $launcherSearch.value = '';
+      renderLauncherDecks(); // Render all decks initially
+      setTimeout(()=> $launcherSearch.focus(), 0);
+    }
+
+    function hideLauncher() {
+      $launcher.style.display = 'none';
+    }
+
+    $launcherTrigger.addEventListener('click', showLauncher);
+    $launcherClose.addEventListener('click', hideLauncher);
+
+    $launcherSearch.addEventListener('input', (e) => {
+      renderLauncherDecks(e.target.value);
+    });
+
+    $launcherSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault(); // Prevent form submission if any
+        const firstMatch = $launcherDecks.querySelector('.launcher-item');
+        if (firstMatch) {
+          firstMatch.click(); // Simulate click on the first item
+        }
+      }
+    });
+
+    // Delegate click for launcher items to open the deck
+    $launcherDecks.addEventListener('click', (e) => {
+      const item = e.target.closest('.launcher-item');
+      if (item) {
+        const href = item.dataset.href;
+        const title = item.dataset.title;
+        openDeckInWindow(href, title);
+        hideLauncher();
+      }
+    });
+
+    // Keyboard shortcuts for launcher
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        showLauncher();
+      }
+      if (e.key === 'Escape') {
+        hideLauncher();
+        hideAddDeckModal(); // Also close add deck modal
+      }
+    });
+
+    // ==========================
+    // IN-PAGE WINDOW MANAGER (Simplified for opening decks from LMC 2400)
+    // ==========================
+    let zCounter = 100; // Z-index counter for windows
+
+    function ensureLayers(){
+      let layer = document.getElementById('osLayer');
+      if(!layer){
+        layer = document.createElement('div');
+        layer.id = 'osLayer';
+        layer.className = 'os-windows-layer';
+        document.body.appendChild(layer);
+      }
+    }
+
+    function makeDraggable(win, handle){
+      let sx=0, sy=0, sl=0, st=0, dragging=false;
+      handle.addEventListener('mousedown', (e)=>{
+        if(e.target.closest('.window-dots')) return; // allow dots to click
+        dragging=true; sx=e.clientX; sy=e.clientY; const r=win.getBoundingClientRect(); sl=r.left; st=r.top; win.style.zIndex = (++zCounter).toString();
+        e.preventDefault();
+      });
+      window.addEventListener('mousemove',(e)=>{
+        if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy;
+        win.style.left = Math.max(0, sl+dx) + 'px'; // Prevent dragging off left edge
+        win.style.top = Math.max(48, st+dy) + 'px'; // Prevent dragging too far up under topbar
+      });
+      window.addEventListener('mouseup',()=> dragging=false);
+    }
+
+    function addDockItem(winId, title){
+      let dock = document.getElementById('osDock');
+      if(!dock){
+        dock = document.createElement('div');
+        dock.id = 'osDock';
+        dock.className = 'os-dock';
+        document.body.appendChild(dock);
+      }
+      const btn = document.createElement('button');
+      btn.className = 'dock-item';
+      btn.textContent = title || 'Window';
+      btn.dataset.win = winId;
+      btn.addEventListener('click',()=>{
+        const win = document.getElementById(winId);
+        if(!win) return;
+        win.style.display = 'block';
+        win.style.zIndex = (++zCounter).toString();
+        btn.remove();
+        if(dock.children.length === 0){ dock.remove(); }
+      });
+      dock.appendChild(btn);
+    }
+
+    function openDeckInWindow(url, title){
+      ensureLayers();
+      const layer = document.getElementById('osLayer');
+      const id = 'win_'+Math.random().toString(36).slice(2,8);
+      const win = document.createElement('div');
+      win.className = 'os-window';
+      win.id = id;
+      // Position new windows slightly offset
+      win.style.left = (80 + Math.random()*60) + 'px';
+      win.style.top = (80 + Math.random()*40) + 'px';
+      win.style.zIndex = (++zCounter).toString();
+
+      win.innerHTML = `
+        <div class="os-titlebar">
+          <div class="window-dots">
+            <span class="dot red" data-act="close"></span>
+            <span class="dot yellow" data-act="min"></span>
+            <span class="dot green" data-act="max"></span>
+          </div>
+          <div class="title">${cleanHtml(title)}</div>
+        </div>
+        <div class="os-content">
+          <iframe src="${url}" title="${cleanHtml(title)}"></iframe>
+        </div>`;
+      layer.appendChild(win);
+
+      const titlebar = win.querySelector('.os-titlebar');
+      makeDraggable(win, titlebar);
+
+      // Wire titlebar dots
+      titlebar.addEventListener('click',(e)=>{
+        const btn = e.target.closest('.dot');
+        if(!btn) return;
+        const act = btn.dataset.act;
+        if(act==='close'){ win.remove(); }
+        if(act==='min'){
+          win.style.display='none';
+          addDockItem(id, title);
+        }
+        if(act==='max'){ win.classList.toggle('max'); }
+      });
+      return id;
+    }
+
+    // A small initial check for any existing dock items on page load
+    // (This part might be more relevant for multi-page apps where the dock persists)
+    document.getElementById('osDock')?.children.length === 0 && document.getElementById('osDock')?.remove();
+
+  </script>
+</body>
+</html>

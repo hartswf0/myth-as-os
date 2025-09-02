@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>Serres: Territorial Possession — Poetic Call & Response</title>
+<style>
+  :root{ --bg:#0b0f14; --ink:#e6edf3; --muted:#9fb1c2; }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  #stage{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+  canvas#world{display:block;width:100vw;height:100vh;background:var(--bg)}
+
+  /* Letterbox */
+  .letterbox::before,.letterbox::after{content:"";position:fixed;left:0;right:0;height:10vh;background:rgba(0,0,0,.65);pointer-events:none;z-index:6}
+  .letterbox::before{top:0}.letterbox::after{bottom:0}
+  /* Hard cut */
+  #cut{position:fixed;inset:0;background:#000;opacity:0;transition:opacity .22s linear;pointer-events:none;z-index:7}
+  #cut.show{opacity:1}
+
+  /* Centered line */
+  #poem{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:10}
+  #line{max-width:86vw;text-align:center;line-height:1.26;font-weight:700;letter-spacing:.25px;
+        font-size:clamp(18px,4.4vw,30px);padding:0 3vw;opacity:0;transform:translateY(8px);transition:opacity .38s ease, transform .38s ease}
+  #line.show{opacity:1;transform:translateY(0)}
+
+  /* Caption & controls */
+  #caption{position:fixed;left:50%;bottom:12vh;transform:translateX(-50%);z-index:11;background:rgba(15,23,32,.72);border:1px solid #1b2a3c;border-radius:10px;padding:.35rem .6rem;font-size:.9rem;color:#e6edf3;backdrop-filter:blur(2px);display:none;white-space:pre-wrap;text-align:center;max-width:90vw}
+  #skip{position:fixed;top:10px;right:10px;background:#0f1720;border:1px solid #1b2a3c;border-radius:10px;padding:.35rem .6rem;font-size:.85rem;color:#c9d6e3;z-index:12}
+  #audioToggle{position:fixed;top:10px;left:10px;background:#0f1720;border:1px solid #1b2a3c;border-radius:10px;padding:.35rem .6rem;font-size:.85rem;color:#c9d6e3;z-index:12}
+</style>
+</head>
+<body>
+<div id="stage" class="letterbox">
+  <canvas id="world"></canvas>
+  <div id="cut"></div>
+  <div id="poem"><div id="line" aria-live="polite"></div></div>
+  <div id="caption" aria-live="polite"></div>
+  <button id="audioToggle" aria-pressed="false">🔈 Sound</button>
+  <button id="skip">Skip</button>
+</div>
+<script>
+(function(){
+  // ===== Canvas =====
+  const canvas=document.getElementById('world');
+  const ctx=canvas.getContext('2d');
+  function resize(){canvas.width=innerWidth;canvas.height=innerHeight;} resize(); addEventListener('resize',resize,{passive:true});
+
+  // ---- GLOBAL SAFETY PATCH: prevent negative-radius arc crashes ----
+  (function patchArc(context){
+    const _arc = context.arc.bind(context);
+    context.arc = function(x,y,r,sAngle,eAngle,anti){
+      if(!Number.isFinite(r)) r = 0;
+      if(r < 0) r = 0; // clamp
+      return _arc(x,y,r,sAngle,eAngle,anti);
+    };
+  })(ctx);
+
+  // ===== UI elements =====
+  const lineEl=document.getElementById('line');
+  const cutEl=document.getElementById('cut');
+  const captionEl=document.getElementById('caption');
+  const skipBtn=document.getElementById('skip');
+  const audioBtn=document.getElementById('audioToggle');
+
+  // ===== Scenes (Birdsong & Noise at the END) =====
+  const scenes=[
+    { line:'“Tigers piss on the edge of their lair.”', anim:animTigerEdge, duration:2400, sfx:sfxBass, caption:'Tigers mark the perimeter.' },
+    { line:'“And so do lions and dogs.”', anim:animLionDog, duration:2200, sfx:sfxBassSoft, caption:'Others claim and counter-claim.' },
+    { line:'“Humans are no exception.”', anim:animHuman, duration:2200, sfx:sfxWhorl, caption:'Inscription becomes possession.' },
+    { line:'“I spit in a bowl of soup, it becomes mine.”', anim:animSoup, duration:2600, sfx:sfxDrop, caption:'Appropriation by mark.' },
+    { line:'“Birds claim their territory with song.”', anim:animBirdSong, duration:2600, sfx:sfxBirdsong, caption:'Harmony as boundary.' },
+    { line:'“Any pollution is a claim to territory.”', anim:animNoiseClaim, duration:2600, sfx:sfxNoise, caption:'Noise as boundary.' },
+    { line:'“What’s the difference but our sense of harmony?”', anim:animHarmony, duration:2600, sfx:sfxBlend, caption:'Two claims, one ear.' }
+  ];
+
+  // ===== Film grain (subtle) =====
+  let noiseCanvas=makeNoise(128,55); let noiseShift=0;
+  function makeNoise(s,alpha){const off=document.createElement('canvas');off.width=off.height=s;const c=off.getContext('2d');const img=c.createImageData(s,s);const d=img.data;for(let i=0;i<d.length;i+=4){const v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=alpha;}c.putImageData(img,0,0);return off;}
+  function grain(){noiseShift=(noiseShift+1)%noiseCanvas.width;ctx.globalAlpha=0.12;ctx.drawImage(noiseCanvas,-noiseShift,-noiseShift,canvas.width+noiseCanvas.width,canvas.height+noiseCanvas.height);ctx.globalAlpha=1;}
+
+  // ===== Audio =====
+  let audioCtx=null, master=null, muted=true; 
+  function ensureAudio(){ if(audioCtx) return; audioCtx=new (window.AudioContext||window.webkitAudioContext)(); master=audioCtx.createGain(); master.gain.value=0.0; master.connect(audioCtx.destination); }
+  function unmute(){ ensureAudio(); muted=false; audioBtn.setAttribute('aria-pressed','true'); const t=audioCtx.currentTime; master.gain.cancelScheduledValues(t); master.gain.linearRampToValueAtTime(0.2, t+0.25); }
+  function mute(){ if(!audioCtx) return; muted=true; audioBtn.setAttribute('aria-pressed','false'); const t=audioCtx.currentTime; master.gain.cancelScheduledValues(t); master.gain.linearRampToValueAtTime(0.0, t+0.2); }
+  audioBtn.addEventListener('click',()=>{ if(!audioCtx||muted) unmute(); else mute(); });
+  addEventListener('pointerdown',()=>{ if(!audioCtx) unmute(); }, {once:true, passive:true});
+  function env(decay=0.3, peak=0.3){ const g=audioCtx.createGain(); g.gain.value=0; const t=audioCtx.currentTime; g.gain.linearRampToValueAtTime(peak, t+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t+decay); return g; }
+  function tone(type,freqStart,freqEnd,len,peak=0.25){ if(!audioCtx||muted) return; const o=audioCtx.createOscillator(); o.type=type; const t=audioCtx.currentTime; const g=env(len,peak); o.frequency.setValueAtTime(freqStart,t); if(freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd,t+len*0.8); o.connect(g).connect(master); o.start(); o.stop(t+len); }
+  function sfxBass(){ tone('sine',110,90,0.6,0.28); }
+  function sfxBassSoft(){ tone('sine',146,130,0.5,0.22); }
+  function sfxWhorl(){ tone('triangle',220,440,1.1,0.14); }
+  function sfxDrop(){ tone('sine',880,220,1.2,0.18); }
+  function sfxBirdsong(){ if(!audioCtx||muted) return; for(let i=0;i<8;i++){ setTimeout(()=>tone('sine',800+Math.random()*800,null,0.35,0.12), i*110);} }
+  function sfxNoise(len=2.2){ if(!audioCtx||muted) return; const b=audioCtx.createBuffer(1, audioCtx.sampleRate*len, audioCtx.sampleRate); const d=b.getChannelData(0); for(let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1); } const s=audioCtx.createBufferSource(); s.buffer=b; const bp=audioCtx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1200; bp.Q.value=1.2; const g=env(len,0.22); s.connect(bp).connect(g).connect(master); s.start(); s.stop(audioCtx.currentTime+len); }
+  function sfxBlend(){ sfxBirdsong(); setTimeout(()=>sfxNoise(1.6), 160); }
+
+  // ===== Intro engine =====
+  let aborted=false; skipBtn.onclick=()=>{aborted=true; startSim();};
+  (async function run(){ await cut(true); await wait(180); await cut(false); for(const s of scenes){ if(aborted) return; await showLine(s.line); await wait(950); await cut(true); await hideLine(); await wait(130); await cut(false); setCaption(s.caption||''); if(typeof s.sfx==='function') s.sfx(s.duration); await playAnim(s.anim,s.duration); setCaption(''); await cut(true); await wait(180); await cut(false);} startSim(); })();
+
+  function setCaption(t){ if(t){ captionEl.textContent=t; captionEl.style.display='block'; } else { captionEl.style.display='none'; } }
+  function showLine(text){ return new Promise(res=>{ lineEl.textContent=''; lineEl.classList.add('show'); typewriter(lineEl,text,18).then(res); }); }
+  function hideLine(){ return new Promise(res=>{ lineEl.classList.remove('show'); setTimeout(res,300); }); }
+  function typewriter(el,text,ms){ return new Promise(done=>{ let i=0; const id=setInterval(()=>{ el.textContent += text.charAt(i++); if(i>=text.length){ clearInterval(id); done(); } }, ms); }); }
+  function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+  function cut(on){ return new Promise(r=>{ cutEl.classList.toggle('show', !!on); setTimeout(r,220); }); }
+
+  function playAnim(draw,duration){ return new Promise(res=>{ const t0=performance.now(); (function raf(now){ const p=Math.min(1,(now-t0)/duration); // base frame
+      ctx.fillStyle='#0c1117'; ctx.fillRect(0,0,canvas.width,canvas.height); draw(p,now); grain(); if(p<1) requestAnimationFrame(raf); else res(); })(t0); }); }
+
+  // ===== Vis animations (stronger contrast + always-visible) =====
+  const ease={ outCubic:x=>1-Math.pow(1-x,3), inOutQuad:x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2 };
+  const lerp=(a,b,t)=>a+(b-a)*t;
+
+  function animTigerEdge(p){ ctx.globalAlpha=1; const w=canvas.width,h=canvas.height,m=28,prog=ease.outCubic(p); ctx.setLineDash([30,16]); ctx.lineDashOffset=-prog*240; ctx.lineWidth=7; ctx.strokeStyle='#f39c12'; ctx.strokeRect(m,m,w-2*m,h-2*m); ctx.setLineDash([]); // inner stripes
+    ctx.strokeStyle='rgba(243,156,18,0.35)'; ctx.lineWidth=2; for(let i=0;i<10;i++){ const inset=m+12+i*9; ctx.strokeRect(inset,inset,w-2*inset,h-2*inset);} }
+
+  function animLionDog(p){ ctx.globalAlpha=1; const w=canvas.width,h=canvas.height,prog=ease.inOutQuad(p); const Lx=lerp(-180,w/2-110,Math.min(1,prog*1.05)); const Dx=lerp(w+180,w/2+110,Math.min(1,prog*1.05)); ctx.fillStyle='rgba(217,180,74,0.95)'; ctx.fillRect(Lx-60,h/2-60,120,120); ctx.beginPath(); ctx.fillStyle='rgba(139,69,19,0.92)'; ctx.arc(Dx,h/2,60,0,Math.PI*2); ctx.fill(); }
+
+  function animHuman(p){ ctx.globalAlpha=1; const cx=canvas.width/2, cy=canvas.height/2; const turns=8, maxR=Math.min(cx,cy)*0.62, prog=ease.outCubic(p); ctx.strokeStyle='rgba(83,207,253,0.9)'; ctx.lineWidth=2; ctx.beginPath(); for(let t=0;t<Math.PI*2*turns*prog;t+=0.15){ const r=maxR*(t/(Math.PI*2*turns)); const rr = Math.max(0, r); const x=cx+Math.cos(t)*rr, y=cy+Math.sin(t)*rr; t===0?ctx.moveTo(x,y):ctx.lineTo(x,y);} ctx.stroke(); }
+
+  function animSoup(p){ ctx.globalAlpha=1; const cx=canvas.width/2, cy=canvas.height/2+6, prog=ease.outCubic(p); ctx.beginPath(); ctx.fillStyle='rgba(205,133,63,0.68)'; ctx.arc(cx,cy,78,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=2; ctx.stroke(); const dropY=lerp(cy-190,cy,Math.min(1,prog*1.2)); ctx.beginPath(); ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.arc(cx,dropY,7,0,Math.PI*2); ctx.fill(); if(prog>0.6){ const rp=(prog-0.6)/0.4; const r=rp*100; ctx.beginPath(); ctx.strokeStyle='rgba(255,255,255,'+(1-rp)*0.85+')'; ctx.lineWidth=2; ctx.arc(cx,cy,Math.max(0,r),0,Math.PI*2); ctx.stroke(); } }
+
+  function animBirdSong(p){ ctx.globalAlpha=1; const cx=canvas.width/2, cy=canvas.height/2; const rings=6, maxR=Math.min(cx,cy)*0.75, prog=ease.outCubic(p); // pastel wash
+    const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(0,maxR)); grd.addColorStop(0,'rgba(180,220,255,0.15)'); grd.addColorStop(1,'rgba(120,180,255,0.05)'); ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<rings;i++){ const r=maxR*(i+prog)/rings; const rad = Math.max(0, r); const a=0.22*(1-i/rings); ctx.beginPath(); ctx.strokeStyle=`rgba(200,235,255,${a})`; ctx.lineWidth=2; ctx.arc(cx,cy,rad,0,Math.PI*2); ctx.stroke(); }
+    for(let i=0;i<9;i++){ const ang=i*(Math.PI/4)+prog*2.2; const r=48+prog*160; ctx.beginPath(); ctx.fillStyle='rgba(230,245,255,0.9)'; ctx.arc(cx+Math.cos(ang)*r, cy+Math.sin(ang)*r, 4, 0, Math.PI*2); ctx.fill(); }
+  }
+
+  function animNoiseClaim(p){ ctx.globalAlpha=1; const w=canvas.width,h=canvas.height,bands=20; ctx.fillStyle='rgba(18,22,30,0.85)'; ctx.fillRect(0,0,w,h); for(let i=0;i<bands;i++){ const y=(i+0.5)*(h/bands); const jitter=(Math.sin((i*0.7)+performance.now()*0.015)*0.5+0.5); const len=(80+jitter*260)*p; ctx.fillStyle=`rgba(255,90,90,${0.25+0.5*Math.random()})`; ctx.fillRect((w-len)/2, y-4, len, 8); ctx.fillStyle=`rgba(120,160,255,${0.15+0.4*Math.random()})`; ctx.fillRect((w-len)/2-8, y-1, len+16, 2);} }
+
+  function animHarmony(p){ ctx.globalAlpha=0.85; animBirdSong(p); ctx.globalAlpha=0.7; animNoiseClaim(Math.min(1,p*1.1)); ctx.globalAlpha=1; }
+
+  // ===== Simulation (auto-start) =====
+  let running=false, agents, field; const cell=12;
+  function startSim(){ if(running) return; lineEl.textContent=''; captionEl.style.display='none'; skipBtn.style.display='none'; audioBtn.style.opacity=0.85; initWorld(); running=true; requestAnimationFrame(simLoop); }
+  function initWorld(){ const cols=Math.ceil(canvas.width/cell), rows=Math.ceil(canvas.height/cell); field=Array.from({length:cols},()=>Array.from({length:rows},()=>({soft:0,hard:0}))); agents=[ makeAgent('Tiger','#f39c12',0.018,0.004), makeAgent('Human','#53cffd',0.012,0.010), makeAgent('Mogul','#b06cff',0.009,0.016) ]; }
+  function makeAgent(name,color,softRate,hardRate){ return {name,color,x:Math.random()*canvas.width,y:Math.random()*canvas.height,softRate,hardRate,dx:0,dy:0}; }
+  function stepWorld(){ for(const a of agents){ if(Math.random()<0.16){ const ang=Math.random()*Math.PI*2; a.dx=Math.cos(ang)*0.7; a.dy=Math.sin(ang)*0.7; } a.x=Math.max(0,Math.min(canvas.width,a.x+a.dx)); a.y=Math.max(0,Math.min(canvas.height,a.y+a.dy)); const gx=Math.floor(a.x/cell), gy=Math.floor(a.y/cell); const c=field[gx][gy]; c.soft=Math.min(1,c.soft+a.softRate); c.hard=Math.min(1,c.hard+a.hardRate); } }
+  function drawWorld(){ ctx.fillStyle='#0b0f14'; ctx.fillRect(0,0,canvas.width,canvas.height); for(let x=0;x<field.length;x++) for(let y=0;y<field[0].length;y++){ const c=field[x][y]; if(c.soft>0){ ctx.fillStyle=`rgba(150,200,255,${c.soft*0.28})`; ctx.fillRect(x*cell,y*cell,cell,cell);} if(c.hard>0){ ctx.fillStyle=`rgba(255,160,120,${c.hard*0.45})`; ctx.fillRect(x*cell,y*cell,cell,cell);} } for(const a of agents){ ctx.fillStyle=a.color; ctx.beginPath(); ctx.arc(a.x,a.y,6,0,Math.PI*2); ctx.fill(); } grain(); }
+  function simLoop(){ if(!running) return; stepWorld(); drawWorld(); requestAnimationFrame(simLoop); }
+
+  // ===== Minimal Test Suite =====
+  (function runTests(){
+    const results = [];
+    function pass(name){ results.push(`✅ ${name}`); }
+    function fail(name,e){ results.push(`❌ ${name}: ${e && e.message}`); }
+    try { ctx.beginPath(); ctx.arc(10,10,-5,0,Math.PI*2); ctx.stroke(); pass('arc clamps negative radius'); } catch(e){ fail('arc clamps negative radius',e); }
+    try { animBirdSong(0); animBirdSong(0.5); animBirdSong(1); pass('animBirdSong safe'); } catch(e){ fail('animBirdSong safe',e); }
+    try { animSoup(0.2); animSoup(0.8); pass('animSoup safe'); } catch(e){ fail('animSoup safe',e); }
+    console.log('[Tests]', ...results);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!--
+MYTH ENGINES — Saul Bass + Whitney Deck (single-file)
+Extended to support slide types: title, quote, concept, credits, image, video.
+• No externals. Works offline (file://). Mobile-first. Safe-area aware.
+• Touch + keyboard controls, auto-advance, live JSON editor.
+• Whitney-style canvas backgrounds; Bass-style wipes and masks.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<title>MYTH ENGINES — Saul Bass + Whitney Deck</title>
+<style>
+  :root{
+    --bg:#0B0B0C;--fg:#F2F0E6;--red:#E6482E;--gold:#F0B322;--teal:#1E8A8A;--accent:var(--red);
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";}
+  #app{position:fixed;inset:0;display:grid;grid-template-rows:1fr auto;}
+  canvas#bg{position:absolute;inset:0;z-index:0;}
+  .stage{position:relative;z-index:1;display:grid;place-items:center;padding:8vmin;}
+  .card{max-width:min(1100px,92vw);min-height:40vh;display:grid;gap:1.2rem;align-content:center}
+  .headline{font-weight:800;letter-spacing:.02em;line-height:1}
+  .headline.big{font-size:clamp(2rem,8vw,6rem)}
+  .sub{font-weight:700;font-size:clamp(1rem,2.3vw,1.6rem);opacity:.9}
+  .body{font-size:clamp(.95rem,1.9vw,1.15rem);opacity:.9}
+  .stamp{display:inline-block;padding:.1em .5em;border:3px solid currentColor;font-weight:800;letter-spacing:.08em}
+  .row{display:flex;gap:1rem;flex-wrap:wrap}
+  .chip{padding:.35em .6em;border:2px solid currentColor;font-weight:700;font-size:.9em}
+
+  /* Bass geometric accents */
+  .accent-rect{position:absolute;inset:0;margin:auto;width:64vmin;height:64vmin;outline:6px solid var(--accent);opacity:.18;transform:rotate(0.0001deg)}
+  .rope{position:absolute;left:10vw;right:10vw;height:6px;background:linear-gradient(90deg, var(--fg) 50%, transparent 50%) 0/24px 6px, var(--fg);opacity:.18}
+  .rope.r1{top:20vh}.rope.r2{top:calc(20vh + 8vmin)}.rope.r3{top:calc(20vh + 16vmin)}
+
+  /* Transitions */
+  .wipe{position:absolute;inset:0;background:var(--bg);z-index:5;transform-origin:left center}
+  .wipe.enter{animation:wipeIn .45s cubic-bezier(.2,.9,.1,1) both}
+  .wipe.exit{animation:wipeOut .45s cubic-bezier(.2,.9,.1,1) both}
+  @keyframes wipeIn{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+  @keyframes wipeOut{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .mask{position:absolute;inset:0;pointer-events:none;z-index:2;display:grid;place-items:center}
+  .mask>.shape{width:0;height:0;border:6px solid var(--accent);opacity:.9}
+  .mask.enter .shape{animation:maskIn .5s ease-out forwards}
+  .mask.exit .shape{animation:maskOut .4s ease-in forwards}
+  @keyframes maskIn{from{width:0;height:0;opacity:0}to{width:70vmin;height:70vmin;opacity:.9}}
+  @keyframes maskOut{from{width:70vmin;height:70vmin;opacity:.9}to{width:0;height:0;opacity:0}}
+  .split{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;z-index:4}
+  .split>div{background:var(--bg)}
+  .split.enter .left{animation:splitInL .5s ease-out both}
+  .split.enter .right{animation:splitInR .5s ease-out both}
+  .split.exit .left{animation:splitOutL .4s ease-in both}
+  .split.exit .right{animation:splitOutR .4s ease-in both}
+  @keyframes splitInL{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+  @keyframes splitInR{from{transform:translateX(0)}to{transform:translateX(100%)}}
+  @keyframes splitOutL{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+  @keyframes splitOutR{from{transform:translateX(100%)}to{transform:translateX(0)}}
+
+  /* Dock */
+  .dock{position:relative;z-index:10;display:flex;justify-content:space-between;gap:.5rem;padding:calc(env(safe-area-inset-bottom) + .5rem) .75rem .75rem;background:linear-gradient(180deg, transparent, rgba(0,0,0,.35));backdrop-filter:blur(4px)}
+  .group{display:flex;gap:.5rem;flex-wrap:wrap}
+  button,.tog{cursor:pointer;border:2px solid var(--fg);background:transparent;color:var(--fg);padding:.55rem .8rem;border-radius:18px;font-weight:800;letter-spacing:.04em}
+  button:active{transform:translateY(1px)}
+  .tog input{display:none}.tog{display:inline-flex;gap:.5rem;align-items:center}
+
+  /* Editor */
+  details.editor{position:fixed;right:.75rem;top:.75rem;z-index:20;max-width:min(540px,90vw)}
+  details.editor summary{background:var(--bg);border:2px solid var(--fg);padding:.4rem .7rem;border-radius:12px;font-weight:800}
+  .panel{margin-top:.5rem;background:#111;border:2px solid var(--fg);padding:.5rem;border-radius:12px}
+  textarea{width:100%;min-height:28vh;background:#0c0c0d;color:var(--fg);border:1px solid #333;border-radius:8px;padding:.6rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.85rem}
+  .panel .row{justify-content:flex-end}
+  .media-note{font-size:.85rem;opacity:.8}
+
+  /* Accessibility */
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<div id="app" role="application" aria-label="Myth Engines slide player">
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <div class="stage" aria-live="polite"></div>
+  <div class="dock" role="toolbar" aria-label="Playback controls">
+    <div class="group">
+      <button id="prev" title="Previous (←)">◀ Prev</button>
+      <button id="play" title="Play/Pause (Space)">► Play</button>
+      <button id="next" title="Next (→)">Next ▶</button>
+    </div>
+    <div class="group">
+      <span class="tog" title="Auto advance"><input id="auto" type="checkbox"/>⏱ Auto</span>
+      <span class="tog" title="High contrast"><input id="hc" type="checkbox"/>⬛⬜ Contrast</span>
+    </div>
+  </div>
+</div>
+
+<details class="editor">
+  <summary>JSON Editor</summary>
+  <div class="panel">
+    <textarea id="jsonInput" aria-label="Slide-map JSON"></textarea>
+    <div class="media-note">Media: use <code>image</code> slides with <code>image_url</code>, or <code>video</code> slides with <code>video_url</code> (YouTube/Vimeo embed URLs). Raw <code>&lt;iframe&gt;</code> is also accepted via <code>content.video</code>.</div>
+    <div class="row">
+      <button id="load">Load JSON</button>
+    </div>
+  </div>
+</details>
+
+<script>
+// ---------------- DEMO JSON (replace in Editor or embed your own) ----------------
+const DEMO = {
+  "title": "MYTH ENGINES: WHY NEWS AND WRESTLING TELL THE SAME STORY",
+  "aspect_ratio": "16:9",
+  "fps": 30,
+  "resolution": {"w": 1920, "h": 1080},
+  "style": {
+    "whitney": {"motifs": ["polar-lissajous","recursive-oscillation","harmonic-spiral","radial-lattice"],"easing": "sinusoidal","tempo": "slow-medium"},
+    "bass": {"typography": {"header": "system-ui","subhead":"system-ui","body":"system-ui"},"transitions":["hard-wipe","shape-mask","cut-in","split-reveal"],"figure_ground":"high-contrast"},
+    "palette": ["#0B0B0C","#F2F0E6","#E6482E","#F0B322","#1E8A8A"]
+  },
+  "slides": [
+    {"id":"opening","type":"title","duration_s":8,
+      "animation":{"bg_pattern":"harmonic-spiral","transition_in":"shape-mask","transition_out":"hard-wipe","color_theme":["#0B0B0C","#F2F0E6","#F0B322"]},
+      "content":{"headline":"MYTH ENGINES","subheadline":"Why News and Wrestling Tell the Same Story","core":"Myth is the operating system of modern media.","key_question":"Language brings worlds into being."}
+    },
+    {"id":"spectacle","type":"quote","duration_s":6,
+      "animation":{"bg_pattern":"radial-lattice","transition_in":"cut-in","color_theme":["#0B0B0C","#F2F0E6","#E6482E"]},
+      "content":{"headline":"Spectacle as Excess","quote":"The virtue of all-in wrestling is that it is the spectacle of excess.","cite":"Barthes, The World of Wrestling"}
+    },
+    {"id":"videoSlide","type":"video","duration_s":12,
+      "animation":{"bg_pattern":"polar-lissajous","transition_in":"split-reveal","color_theme":["#0B0B0C","#F2F0E6"]},
+      "content":{"headline":"Classic Entrance Video","video_url":"https://www.youtube.com/embed/dQw4w9WgXcQ"}
+    },
+    {"id":"imageSlide","type":"image","duration_s":8,
+      "animation":{"bg_pattern":"recursive-oscillation","transition_in":"hard-wipe","color_theme":["#0B0B0C","#F2F0E6","#E6482E"]},
+      "content":{"headline":"Vintage Wrestling Poster","image_url":"https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/WWF_Wrestlemania.jpg/640px-WWF_Wrestlemania.jpg","alt":"Vintage WrestleMania poster"}
+    },
+    {"id":"closing","type":"credits","duration_s":8,
+      "animation":{"bg_pattern":"harmonic-spiral","transition_in":"cut-in","transition_out":"hard-wipe","color_theme":["#0B0B0C","#F2F0E6","#E6482E","#F0B322","#1E8A8A"]},
+      "content":{"cta":"Choose a prompt. Generate. Enter the ring."}
+    }
+  ]
+};
+
+// ---------------- CORE ENGINE ----------------
+const app = document.getElementById('app');
+const stage = document.querySelector('.stage');
+const bg = document.getElementById('bg');
+const ctx = bg.getContext('2d');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const playBtn = document.getElementById('play');
+const autoTog = document.getElementById('auto');
+const hcTog = document.getElementById('hc');
+const jsonInput = document.getElementById('jsonInput');
+const loadBtn = document.getElementById('load');
+
+let SLIDES = DEMO.slides;
+let STYLE = DEMO.style;
+let idx = 0; let playing = false; let autoAdvance = false; let rafId = 0; let t0 = 0; let slideEndTs = 0;
+
+function resize(){
+  const dpr = Math.min(2, window.devicePixelRatio||1);
+  bg.width = Math.floor(innerWidth*dpr);
+  bg.height = Math.floor(innerHeight*dpr);
+  bg.style.width = '100%'; bg.style.height = '100%';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener('resize', resize, {passive:true});
+resize();
+
+const EASE = { sin: x => Math.sin(x), smooth: x => x<0.5? 2*x*x : 1-Math.pow(-2*x+2,2)/2 };
+
+// Background pattern renderer
+function renderWhitney(pattern, colors, time){
+  ctx.fillStyle = colors[0]||getComputedStyle(document.documentElement).getPropertyValue('--bg');
+  ctx.fillRect(0,0,bg.width,bg.height);
+  const w=bg.width, h=bg.height; ctx.save(); ctx.translate(w/2,h/2); ctx.globalAlpha=.9; const fg=colors[1]||'#F2F0E6';
+  ctx.strokeStyle = fg; ctx.lineWidth = 2; ctx.globalCompositeOperation = 'lighter';
+  const N = 180;
+  switch(pattern){
+    case 'polar-lissajous':{
+      const A = Math.min(w,h)*0.32; const a=3,b=4,d=time*0.6; ctx.beginPath();
+      for(let i=0;i<N;i++){const t=i/N*Math.PI*2; const x=A*Math.sin(a*t+d); const y=A*Math.sin(b*t); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.stroke(); break;}
+    case 'harmonic-spiral':{
+      const turns=6; const A=Math.min(w,h)*0.42; const k=0.18; ctx.beginPath();
+      for(let i=0;i<N*turns;i++){const t=i/(N*turns)*Math.PI*2*turns; const r=A*Math.exp(-k*t/(Math.PI*2)); const x=r*Math.cos(t+time*.4), y=r*Math.sin(t*.98); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);} ctx.stroke(); break;}
+    case 'radial-lattice':{
+      const rings=8,spokes=18,R=Math.min(w,h)*0.44; ctx.globalAlpha=.6; ctx.lineWidth=1.5;
+      for(let j=1;j<=rings;j++){ctx.beginPath(); ctx.arc(0,0,R*j/rings,0,Math.PI*2); ctx.stroke();}
+      ctx.rotate(time*.15);
+      for(let s=0;s<spokes;s++){ctx.rotate((Math.PI*2)/spokes); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(R,0); ctx.stroke();}
+      break;}
+    case 'recursive-oscillation':{
+      const layers=7,A=Math.min(w,h)*0.4; for(let L=0;L<layers;L++){const r=A*(1-L/layers); ctx.save(); ctx.rotate(Math.sin(time*.25+L)*.3); ctx.beginPath(); ctx.rect(-r,-r,r*2,r*2); ctx.stroke(); ctx.restore();} break;}
+    default:{/* no-op */}
+  }
+  ctx.restore();
+}
+
+function setTheme(theme){
+  if(!theme) return;
+  document.documentElement.style.setProperty('--bg', theme[0]||'#0B0B0C');
+  document.documentElement.style.setProperty('--fg', theme[1]||'#F2F0E6');
+  document.documentElement.style.setProperty('--accent', theme[2]||'#E6482E');
+}
+function makeNode(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+function transition(kind, phase){
+  switch(kind){
+    case 'hard-wipe': return makeNode(`<div class="wipe ${phase}"></div>`);
+    case 'shape-mask': return makeNode(`<div class="mask ${phase}"><div class="shape"></div></div>`);
+    case 'split-reveal': return makeNode(`<div class="split ${phase}"><div class="left"></div><div class="right"></div></div>`);
+    case 'cut-in': default: return null;
+  }
+}
+
+// --- Media helpers ---
+function makeEmbedIframe(url){
+  const iframe = document.createElement('iframe');
+  iframe.src = url;
+  iframe.title = 'Embedded video';
+  iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+  iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+  iframe.loading = 'lazy';
+  iframe.style.width = 'min(90vw, 960px)';
+  iframe.style.aspectRatio = '16 / 9';
+  iframe.style.border = '0';
+  iframe.sandbox = 'allow-scripts allow-same-origin allow-presentation allow-popups';
+  return iframe;
+}
+function makeImage(url, alt){
+  const img = document.createElement('img');
+  img.src = url; img.alt = alt||''; img.loading = 'lazy'; img.decoding='async'; img.referrerPolicy='no-referrer';
+  img.style.maxWidth = 'min(92vw, 1100px)'; img.style.width='100%'; img.style.height='auto'; img.style.boxShadow='0 10px 40px rgba(0,0,0,.35)';
+  return img;
+}
+
+function renderSlide(s){
+  setTheme(s.animation?.color_theme || STYLE.palette);
+  stage.innerHTML = '';
+  // Bass accents
+  stage.appendChild(makeNode('<div class="accent-rect"></div>'));
+  stage.appendChild(makeNode('<div class="rope r1"></div>'));
+  stage.appendChild(makeNode('<div class="rope r2"></div>'));
+  stage.appendChild(makeNode('<div class="rope r3"></div>'));
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  if(s.type==='title'){
+    card.innerHTML = `
+      <div class="headline big">${escapeHTML(s.content?.headline||'')}</div>
+      <div class="sub">${escapeHTML(s.content?.subheadline||'')}</div>
+      ${s.content?.core? `<div class="body">${escapeHTML(s.content.core)}</div>`:''}
+      ${s.content?.key_question? `<div class="stamp">${escapeHTML(s.content.key_question)}</div>`:''}
+    `;
+  } else if(s.type==='quote'){
+    card.innerHTML = `
+      <div class="headline big">${escapeHTML(s.content?.headline||'Quote')}</div>
+      <div class="body" style="font-size:clamp(1.1rem,2.2vw,1.5rem);line-height:1.25"><em>“${escapeHTML(s.content?.quote||'') }”</em></div>
+      <div class="sub">${escapeHTML(s.content?.cite||'')}</div>
+    `;
+  } else if(s.type==='concept'){
+    const bullets = (s.content?.bullets||[]).map(x=>`<li>${escapeHTML(x)}</li>`).join('');
+    card.innerHTML = `
+      <div class="headline big">${escapeHTML(s.content?.headline||'')}</div>
+      <ul class="body" style="display:grid;gap:.5rem">${bullets}</ul>
+    `;
+  } else if(s.type==='image'){
+    const h = s.content?.headline ? `<div class="headline big">${escapeHTML(s.content.headline)}</div>` : '';
+    card.innerHTML = h;
+    if(s.content?.image_url){
+      card.appendChild(makeImage(s.content.image_url, s.content?.alt || s.content?.headline));
+    } else {
+      const note = document.createElement('div'); note.className='body'; note.textContent='(missing image_url)'; card.appendChild(note);
+    }
+  } else if(s.type==='video'){
+    card.innerHTML = s.content?.headline ? `<div class="headline big">${escapeHTML(s.content.headline)}</div>` : '';
+    let node = null;
+    if(s.content?.video_url){ node = makeEmbedIframe(s.content.video_url); }
+    else if(s.content?.video && s.content.video.includes('<iframe')){
+      const holder = document.createElement('div'); holder.innerHTML = s.content.video.trim(); node = holder.firstElementChild;
+    }
+    if(node){ card.appendChild(node); }
+    else { const note=document.createElement('div'); note.className='body'; note.textContent='(missing video_url / iframe)'; card.appendChild(note); }
+  } else if(s.type==='credits'){
+    card.innerHTML = `
+      <div class="headline big">${escapeHTML(DEMO.title||'MYTH ENGINES')}</div>
+      <div class="sub">${escapeHTML(s.content?.cta||'')}</div>
+    `;
+  } else {
+    card.textContent = s.id || 'slide';
+  }
+  stage.appendChild(card);
+
+  // entry transition overlay
+  const ent = transition(s.animation?.transition_in, 'enter');
+  if(ent){ stage.appendChild(ent); setTimeout(()=>ent.remove(), 520); }
+
+  // schedule end
+  const dur = Math.max(2, (s.duration_s||6));
+  slideEndTs = performance.now() + dur*1000;
+}
+
+function escapeHTML(s){return (s+"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+
+function tick(ts){
+  if(!t0) t0 = ts; const t = (ts - t0)/1000;
+  const slide = SLIDES[idx]||{}; 
+  renderWhitney(slide.animation?.bg_pattern||'harmonic-spiral', slide.animation?.color_theme||STYLE.palette, t);
+  if(autoAdvance && playing && ts >= slideEndTs){ next(); }
+  rafId = requestAnimationFrame(tick);
+}
+
+function play(){ playing = true; playBtn.textContent = '❚❚ Pause'; autoAdvance = document.getElementById('auto').checked; }
+function pause(){ playing = false; playBtn.textContent = '► Play'; }
+function toggle(){ playing? pause(): play(); }
+function prev(){ idx = (idx-1+SLIDES.length)%SLIDES.length; renderSlide(SLIDES[idx]); }
+function next(){ idx = (idx+1)%SLIDES.length; renderSlide(SLIDES[idx]); }
+
+prevBtn.onclick = prev; nextBtn.onclick = next; playBtn.onclick = toggle; autoTog.onchange = e=>{autoAdvance = e.target.checked};
+
+hcTog.onchange = (e)=>{
+  if(e.target.checked){ document.documentElement.style.setProperty('--bg','#000'); document.documentElement.style.setProperty('--fg','#fff'); document.documentElement.style.setProperty('--accent','#fff'); }
+  else { setTheme(STYLE.palette); }
+};
+
+addEventListener('keydown', (e)=>{ if(e.key==='ArrowLeft'){prev();} if(e.key==='ArrowRight'){next();} if(e.key===' '){ e.preventDefault(); toggle(); } });
+
+jsonInput.value = JSON.stringify(DEMO, null, 2);
+loadBtn.onclick = ()=>{
+  try{ const obj = JSON.parse(jsonInput.value); SLIDES = obj.slides||SLIDES; STYLE = obj.style||STYLE; idx=0; renderSlide(SLIDES[idx]); }
+  catch(err){ alert('JSON parse error: '+err.message); }
+};
+
+// boot
+renderSlide(SLIDES[idx]);
+cancelAnimationFrame(rafId); rafId = requestAnimationFrame(tick);
+</script>
+</body>
+</html>

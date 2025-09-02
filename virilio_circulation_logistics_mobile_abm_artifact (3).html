@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Filmic Essay — Logistics · Latent · Mud · Medium (with Sound)</title>
+<style>
+  :root{
+    --bg:#0b0f14;--ink:#e6eef8;--muted:#9fb2c7;--blue:#31c2ff;--red:#ff4d57;--green:#7bffb3;--amber:#ffc14d;--mud:#7a5b44;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:#000;color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Inter,Arial}
+  #stage{position:fixed;inset:0;display:block;width:100vw;height:100vh;background:#000}
+  .ui{position:fixed;inset:0;pointer-events:none}
+  /* Quotes */
+  .quoteBox{position:absolute;left:6vw;right:6vw;bottom:8vh;text-align:center}
+  .quote{font-weight:800;line-height:1.18;font-size:clamp(16px,4.6vw,34px);text-shadow:0 2px 10px rgba(0,0,0,0.6); opacity:0; transform:translateY(8px); transition:opacity .8s ease, transform .8s ease}
+  .quote.on{opacity:1; transform:translateY(0)}
+  .ctrl{color:var(--blue)} .emph{color:var(--amber)} .dest{color:var(--red)} .poss{color:var(--green)} .dim{color:var(--muted)}
+  /* Dots */
+  .dots{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#223;opacity:.5}
+  .dot.active{background:var(--amber);opacity:1}
+  /* Transition cards */
+  .card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);background:rgba(10,14,20,0.75);border:1px solid #1e2a40;border-radius:12px;padding:12px 16px;font-weight:700;letter-spacing:.2px;opacity:0;transition:opacity .4s ease, transform .4s ease; pointer-events:none; text-align:center; max-width:min(86vw,680px)}
+  .card.on{opacity:1; transform:translate(-50%,-50%) scale(1)}
+  /* CTA */
+  .cta{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 30%, rgba(0,0,0,0.8) 100%);opacity:0;pointer-events:none;transition:opacity .8s ease}
+  .cta.on{opacity:1; pointer-events:auto}
+  .cta .big{font-weight:900;font-size:clamp(18px,6.5vw,44px);text-align:center;text-wrap:balance;text-shadow:0 4px 24px rgba(0,0,0,0.6)}
+  .cta .mini{margin-top:10px;color:var(--muted);font-size:clamp(12px,3.4vw,16px)}
+  .cta .row{display:flex;gap:10px;margin-top:16px}
+  .btn{border:1px solid #274267;background:#0e1626;color:var(--ink);padding:10px 14px;border-radius:14px;font-size:14px;pointer-events:auto}
+  .soundBtn{position:absolute;right:10px;top:10px}
+  .cap{position:absolute;left:10px;top:10px;font-size:12px;color:#9aff9a;background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div class="ui">
+  <div class="cap" id="cap">playing…</div>
+  <div class="dots" id="dots"></div>
+  <div class="quoteBox"><div class="quote" id="quote"></div></div>
+  <div class="card" id="bridge"></div>
+  <button class="btn soundBtn" id="sound">Sound: Off</button>
+  <div class="cta" id="cta">
+    <div class="big" id="ctaText">Move. Explore. Make the medium yours.</div>
+    <div class="mini">Draw a path · Stir the stream · Publish a signal</div>
+    <div class="row"><button class="btn" id="replay">Replay</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  // ---------- Safety: error display ----------
+  const cap=document.getElementById('cap');
+  function status(s){ cap.textContent=s; }
+  window.addEventListener('error', e=>{ status('ERR: '+(e.error?.message||e.message||e)); });
+
+  // ---------- Canvas ----------
+  const C=document.getElementById('stage'); const X=C.getContext('2d');
+  let W=0,H=0; function resize(){ W=innerWidth||320; H=innerHeight||240; C.width=W; C.height=H; } addEventListener('resize', resize); resize();
+  // RAF polyfill
+  window.requestAnimationFrame = window.requestAnimationFrame || (cb=>setTimeout(()=>cb(performance.now()),16));
+
+  // ---------- UI els ----------
+  const qEl=document.getElementById('quote');
+  const dotsEl=document.getElementById('dots');
+  const bridge=document.getElementById('bridge');
+  const soundBtn=document.getElementById('sound');
+  const cta=document.getElementById('cta');
+  const replay=document.getElementById('replay');
+
+  // ---------- Audio (graceful) ----------
+  let AC=null, master=null, sceneBus=null, noise=null, filter=null, tone=null, soundOn=false;
+  function initAudio(){ try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value=0; master.connect(AC.destination);
+    sceneBus = AC.createGain(); sceneBus.connect(master);
+    filter = AC.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=1000; filter.Q.value=0.8; filter.connect(sceneBus);
+    // Constant noise bed we can mix per scene
+    const buf = AC.createBuffer(1, AC.sampleRate*2, AC.sampleRate); const data = buf.getChannelData(0); for(let i=0;i<data.length;i++) data[i] = Math.random()*2-1;
+    noise = AC.createBufferSource(); noise.buffer=buf; noise.loop=true; noise.connect(filter); noise.start();
+    soundOn=true; master.gain.setTargetAtTime(0.35, AC.currentTime, 0.25); soundBtn.textContent='Sound: On';
+  }catch(e){ status('Audio error'); }
+  }
+  soundBtn.addEventListener('click', ()=>{ if(!AC){ initAudio(); return; } soundOn=!soundOn; master.gain.setTargetAtTime(soundOn?0.35:0.0, AC.currentTime, 0.2); soundBtn.textContent = soundOn? 'Sound: On':'Sound: Off'; });
+  // also try to init on first gesture for autoplay policies
+  window.addEventListener('pointerdown', ()=>{ if(!AC) initAudio(); }, {once:true});
+
+  function setTone(freq=110, type='sawtooth', gain=0.04){ if(!AC) return; if(tone){ try{ tone.stop(); }catch{} }
+    const o=AC.createOscillator(); const g=AC.createGain(); o.type=type; o.frequency.value=freq; o.connect(g); g.connect(filter); const t=AC.currentTime; g.gain.value=0; g.gain.setTargetAtTime(gain, t, 0.15); tone={osc:o,gain:g}; o.start(); }
+  function blip(freq=440, dur=0.12, gain=0.08){ if(!AC) return; const o=AC.createOscillator(); const g=AC.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(filter); const t=AC.currentTime; g.gain.value=0; g.gain.linearRampToValueAtTime(gain, t+0.01); g.gain.exponentialRampToValueAtTime(0.0001, t+dur); o.start(); o.stop(t+dur+0.03); }
+
+  // ---------- Shared helpers ----------
+  const rnd=(a=1)=>Math.random()*a, rndi=n=>Math.floor(Math.random()*n), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function flow(x,y,t,scale=0.004){ const sx=Math.sin((y*scale + t*0.0007)); const sy=Math.cos((x*scale - t*0.0008)); return {vx:sx, vy:sy}; }
+
+  // ---------- Scene scaffolding ----------
+  function setQuote(html){ qEl.innerHTML=html; qEl.classList.remove('on'); // kinetic reveal
+    setTimeout(()=>qEl.classList.add('on'), 30);
+  }
+  function showBridge(text, ms=1400){ bridge.textContent=text; bridge.classList.add('on'); setTimeout(()=>bridge.classList.remove('on'), ms); }
+  function buildDots(n){ dotsEl.innerHTML=''; for(let i=0;i<n;i++){ const d=document.createElement('div'); d.className='dot'; dotsEl.appendChild(d); } }
+  function markDot(i){ [...dotsEl.children].forEach((n,idx)=>n.classList.toggle('active', idx===i)); }
+
+  // ---------- Entities ----------
+  // Virilio agents + grid
+  const vAgents=[]; const vGW=40, vGH=22; let vGrid;
+  function vInit(){ vGrid=new Array(vGW*vGH).fill(0).map(()=>({b:0,r:0})); vAgents.length=0; for(let i=0;i<140;i++) vAgents.push({x:rnd(W),y:rnd(H),vx:rnd(1)-.5,vy:rnd(1)-.5,c:Math.random()<.5?'#31c2ff':'#ff4d57'}); }
+  function vDraw(dt,now){ X.fillStyle='rgba(10,14,20,0.18)'; X.fillRect(0,0,W,H); const cw=W/vGW, ch=H/vGH; for(const a of vAgents){ a.x+=a.vx; a.y+=a.vy; if(a.x<0||a.x>W) a.vx*=-1; if(a.y<0||a.y>H) a.vy*=-1; const gx=clamp(Math.floor(a.x/cw),0,vGW-1), gy=clamp(Math.floor(a.y/ch),0,vGH-1); const cell=vGrid[gy*vGW+gx]; if(a.c==='#31c2ff') cell.b+=0.5; else cell.r+=0.5; X.beginPath(); X.arc(a.x,a.y,2.1,0,Math.PI*2); X.fillStyle=a.c; X.fill(); }
+    for(let gy=0; gy<vGH; gy++){ for(let gx=0; gx<vGW; gx++){ const cell=vGrid[gy*vGW+gx]; const x=gx*cw, y=gy*ch; const tot=cell.b+cell.r; if(tot>2){ X.fillStyle = cell.b>cell.r? 'rgba(49,194,255,0.12)' : 'rgba(255,77,87,0.12)'; X.fillRect(x,y,Math.ceil(cw)+1,Math.ceil(ch)+1); } X.strokeStyle='rgba(35,55,85,0.05)'; X.strokeRect(x,y,Math.ceil(cw)+1,Math.ceil(ch)+1); } }
+  }
+
+  // Latent constellation + user paths
+  const lPoints=[]; const lPath=[]; function lInit(){ lPoints.length=0; for(let i=0;i<240;i++) lPoints.push({x:rnd(W),y:rnd(H),vx:0,vy:0}); lPath.length=0; // seed a curve
+    for(let i=0;i<20;i++) lPath.push({x:(W*0.1)+i*(W*0.8/19), y: H*0.5+Math.sin(i*0.4)*H*0.2}); }
+  function lDraw(dt,now){ X.fillStyle='rgba(5,7,11,0.35)'; X.fillRect(0,0,W,H); X.beginPath(); X.strokeStyle='rgba(123,255,179,0.6)'; X.lineWidth=1.2; for(let i=0;i<lPath.length-1;i++){ const a=lPath[i], b=lPath[i+1]; X.moveTo(a.x,a.y); X.lineTo(b.x,b.y);} X.stroke();
+    for(const p of lPoints){ let best=1e9, ax=0, ay=0; for(const n of lPath){ const dx=p.x-n.x, dy=p.y-n.y; const d2=dx*dx+dy*dy; if(d2<best){ best=d2; ax=n.x; ay=n.y; } } const d=Math.sqrt(best)||1; p.vx += (ax-p.x)/d*0.22; p.vy += (ay-p.y)/d*0.22; p.vx*=0.96; p.vy*=0.96; p.x+=p.vx; p.y+=p.vy; X.beginPath(); X.arc(p.x,p.y,1.8,0,Math.PI*2); X.fillStyle='rgba(123,255,179,0.85)'; X.fill(); }
+  }
+  // allow drawing paths
+  let drawing=false, lastPt=null; function addSeg(a,b){ const dx=b.x-a.x, dy=b.y-a.y; const len=Math.hypot(dx,dy); if(len<2) return; const dirX=dx/(len||1), dirY=dy/(len||1); lPath.push({x:b.x,y:b.y,dirX,dirY}); if(AC) blip(300,0.06,0.05); }
+
+  // Dewey mud
+  const dMud=[]; function dInit(){ dMud.length=0; for(let i=0;i<1600;i++) dMud.push({x:rnd(W),y:rnd(H),vx:0,vy:0}); }
+  function dStep(dt,now){ for(const p of dMud){ const f=flow(p.x,p.y,now,0.0025); p.vx+=f.vx*0.12; p.vy+=f.vy*0.12; p.vx*=0.96; p.vy*=0.96; p.x=(p.x+p.vx+W)%W; p.y=(p.y+p.vy+H)%H; } }
+  function dDraw(alpha=0.22){ X.fillStyle=`rgba(122,91,68,${alpha})`; X.fillRect(0,0,W,H); X.globalCompositeOperation='lighter'; X.fillStyle='rgba(255,218,185,0.02)'; for(const p of dMud){ X.fillRect(p.x,p.y,1.2,1.2); } X.globalCompositeOperation='source-over'; }
+  function dStir(x,y,s){ for(let i=0;i<60;i++){ const p=dMud[rndi(dMud.length)]; const dx=p.x-x, dy=p.y-y; const d=Math.max(1,Math.hypot(dx,dy)); p.vx -= dx/d*s*0.8; p.vy -= dy/d*s*0.8; } if(AC) blip(120,0.12,0.06); }
+
+  // McLuhan lanes
+  function mDraw(now){ X.fillStyle='#0a0f16'; X.fillRect(0,0,W,H); const h=H/3; // text lane
+    X.fillStyle='rgba(20,28,44,0.6)'; X.fillRect(0,0,W,h); X.fillStyle='rgba(255,255,255,0.05)'; for(let i=0;i<h;i+=6){ X.fillRect(0,i,W,1); }
+    // wave lane
+    X.fillStyle='rgba(15,22,38,0.6)'; X.fillRect(0,h,W,h); X.strokeStyle='rgba(255,255,255,0.4)'; X.beginPath(); for(let x=0;x<W;x+=4){ const v=Math.sin((x*0.03)+now*0.006); const yy=h+h/2+v*(h*0.35); x===0?X.moveTo(x,yy):X.lineTo(x,yy);} X.stroke();
+    // pixel lane
+    X.fillStyle='rgba(12,18,32,0.6)'; X.fillRect(0,2*h,W,h); const s=8; for(let yy=2*h; yy<3*h; yy+=s){ for(let x=0;x<W; x+=s){ const n=(Math.sin((x+yy)*0.03+now*0.004)+1)/2; const a=0.05+n*0.15; X.fillStyle=`rgba(49,194,255,${a})`; X.fillRect(x,yy,s-1,s-1); } }
+  }
+
+  // ---------- Scenes ----------
+  const SCENES=[
+    { // 0
+      name:'Virilio', dur:10000,
+      text:`“Whoever <span class='ctrl'>controls</span> the <span class='poss'>territory</span> possesses it.<br><span class='dim'>Possession</span> is a matter of <span class='emph'>movement</span> and <span class='emph'>circulation</span>.” — Virilio`,
+      enter(){ vInit(); if(AC){ filter.frequency.setTargetAtTime(900, AC.currentTime, 0.3); setTone(90,'sawtooth',0.04);} },
+      draw(dt,now){ // background long exposure
+        const u=(Math.sin(now*0.0015)+1)/2, v=(Math.cos(now*0.0011)+1)/2; const g=X.createLinearGradient(0,0,W,H); g.addColorStop(0,`hsl(${Math.floor(200+60*u)},60%,6%)`); g.addColorStop(1,`hsl(${Math.floor(200+60*v)},60%,3%)`); X.fillStyle=g; X.fillRect(0,0,W,H);
+        vDraw(dt,now);
+      },
+      bridge:`From logistics of movement → to digital frontiers`
+    },
+    { // 1
+      name:'Latent', dur:10000,
+      text:`“The <span class='emph'>latent space</span> of AI becomes territory when <span class='ctrl'>explored</span>.<br>Prompts are paths; <span class='poss'>possession</span> follows traversal.”`,
+      enter(){ lInit(); if(AC){ filter.frequency.setTargetAtTime(1600, AC.currentTime, 0.3); setTone(220,'triangle',0.03); for(let k=0;k<6;k++) setTimeout(()=>blip(220*(1+k*0.2),0.08,0.05), k*180);} },
+      draw(dt,now){ const u=(Math.sin(now*0.0014)+1)/2, v=(Math.cos(now*0.0010)+1)/2; const g=X.createLinearGradient(0,0,W,H); g.addColorStop(0,`hsl(${Math.floor(190+30*u)},50%,7%)`); g.addColorStop(1,`hsl(${Math.floor(200+30*v)},50%,4%)`); X.fillStyle=g; X.fillRect(0,0,W,H); lDraw(dt,now); },
+      bridge:`From mapping latent space → into the muddy stream`
+    },
+    { // 2
+      name:'Dewey', dur:10000,
+      text:`“Get down from <span class='dim'>noble aloofness</span> into the <span class='emph'>muddy stream</span><br>of <span class='poss'>concrete things</span>.” — Dewey`,
+      enter(){ dInit(); if(AC){ filter.frequency.setTargetAtTime(600, AC.currentTime, 0.3); setTone(70,'sawtooth',0.025);} },
+      draw(dt,now){ const u=(Math.sin(now*0.0013)+1)/2; const g=X.createLinearGradient(0,0,W,H); g.addColorStop(0,`hsl(${Math.floor(30+8*u)},40%,6%)`); g.addColorStop(1,`hsl(${Math.floor(30+8*(1-u))},40%,4%)`); X.fillStyle=g; X.fillRect(0,0,W,H); dStep(dt,now); dDraw(0.24); },
+      bridge:`From concrete engagement → to the medium itself`
+    },
+    { // 3
+      name:'McLuhan', dur:9000,
+      text:`“The <span class='ctrl'>medium</span> <span class='emph'>is</span> the <span class='poss'>message</span>.” — McLuhan`,
+      enter(){ if(AC){ filter.type='bandpass'; filter.frequency.setTargetAtTime(1200, AC.currentTime, 0.3); setTone(330,'square',0.02); for(let i=0;i<6;i++) setTimeout(()=>blip(440*(1+i*0.12),0.05,0.04), i*200); } },
+      draw(dt,now){ const u=(Math.sin(now*0.0011)+1)/2; const g=X.createLinearGradient(0,0,W,H); g.addColorStop(0,`hsl(${Math.floor(210+10*u)},60%,6%)`); g.addColorStop(1,`hsl(${Math.floor(210+10*(1-u))},60%,3%)`); X.fillStyle=g; X.fillRect(0,0,W,H); mDraw(now); },
+      bridge:`Synthesis`
+    },
+    { // 4 synthesis / CTA
+      name:'CTA', dur:6000,
+      text:`<span class='dim'>Synthesis:</span> Control emerges from <span class='emph'>movement</span> (logistics), <span class='ctrl'>exploration</span> (latent),
+            <span class='poss'>engagement</span> (mud), and the <span class='ctrl'>medium</span> you choose. Waiting cedes territory to others.`,
+      enter(){ if(AC){ filter.type='lowpass'; filter.frequency.setTargetAtTime(900, AC.currentTime, 0.3); setTone(220,'sine',0.02);} setTimeout(()=>{ cta.classList.add('on'); }, 2500); },
+      draw(dt,now){ const g=X.createLinearGradient(0,0,W,H); g.addColorStop(0,'#020304'); g.addColorStop(1,'#070a12'); X.fillStyle=g; X.fillRect(0,0,W,H); },
+      bridge:''
+    }
+  ];
+
+  buildDots(SCENES.length-1); // exclude CTA from dots
+
+  // ---------- Scene loop ----------
+  let idx=0, t=0, last=performance.now(); setQuote(SCENES[0].text); markDot(0);
+  function setScene(i){ idx=i; t=0; setQuote(SCENES[idx].text); markDot(Math.min(idx, SCENES.length-2)); SCENES[idx].enter && SCENES[idx].enter(); if(idx>0){ showBridge(SCENES[idx-1].bridge||''); } }
+
+  function loop(now){ const dt=Math.min(50, now-last); last=now; // draw
+    try{ SCENES[idx].draw(dt, now); }catch(e){ status('draw error'); }
+    t+=dt; if(t>SCENES[idx].dur){ if(idx<SCENES.length-1){ setScene(idx+1); } else { /* end */ } }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // start from 0
+  SCENES[0].enter && SCENES[0].enter();
+
+  // ---------- Interaction ----------
+  C.addEventListener('pointerdown', e=>{ const r=C.getBoundingClientRect(); const p={x:e.clientX-r.left,y:e.clientY-r.top}; drawing=true; lastPt=p; if(idx===1){ lPath.push({x:p.x,y:p.y,dirX:0,dirY:0}); if(AC) blip(330,0.06,0.04); } if(idx===2){ dStir(p.x,p.y,1.0); }
+  });
+  C.addEventListener('pointermove', e=>{ if(!drawing) return; const r=C.getBoundingClientRect(); const p={x:e.clientX-r.left,y:e.clientY-r.top}; if(idx===1){ addSeg(lastPt,p); } if(idx===2){ dStir(p.x,p.y,0.6); } lastPt=p; });
+  C.addEventListener('pointerup', ()=>{ drawing=false; }); C.addEventListener('pointerleave', ()=>{ drawing=false; });
+
+  // ---------- CTA Replay ----------
+  replay.addEventListener('click', ()=>{ cta.classList.remove('on'); setScene(0); });
+
+})();
+</script>
+</body>
+</html>

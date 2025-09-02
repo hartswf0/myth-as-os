@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>The World of Wrestling — Roland Barthes (Saul Bass Concrete Poetry Deck)</title>
+<style>
+  :root{
+    --bg:#0b0b0c; --fg:#f7f7f5; --accent:#e53935; --gold:#d6a200; --shadow:#111318; --muted:#9a9a9a;
+    --safe-top: env(safe-area-inset-top, 0px); --safe-right: env(safe-area-inset-right, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); --safe-left: env(safe-area-inset-left, 0px);
+  }
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";overflow:hidden}
+
+  /* Stage */
+  .stage{position:fixed;inset:0;padding:clamp(8px,2.2vmin,24px);display:grid;place-items:center}
+  .slide{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr auto;padding:max(16px,4vmin);box-sizing:border-box;opacity:0;transform:translateY(12px) scale(.98);transition:opacity .6s ease,transform .6s ease}
+  .slide.active{opacity:1;transform:translateY(0) scale(1)}
+
+  /* Title / Theme */
+  .theme{text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:clamp(18px,3.2vmin,32px);color:var(--fg);display:flex;align-items:center;gap:.6em}
+  .theme .chip{display:inline-block;background:var(--accent);padding:.22em .55em;border-radius:2px}
+
+  /* Content layout */
+  .content{position:relative;display:grid;grid-template-areas:"quote";place-items:center;gap:2vmin;overflow:hidden}
+  .content.has-media{grid-template-columns:1fr min(80ch,60%);grid-template-areas:"media quote"}
+  .content .quote{grid-area:quote;position:relative;z-index:3}
+  blockquote{max-width:80ch;font-size:clamp(20px,4vmin,44px);line-height:1.12;font-weight:900;text-wrap:balance;margin:0;position:relative;padding:1.2rem 1rem;border-radius:8px;background:linear-gradient(180deg,#00000066,#00000010);box-shadow:0 6px 18px #0007}
+  blockquote em,blockquote i{font-style:italic;font-weight:800}
+
+  /* Media wrapper + modes */
+  .media{grid-area:media;display:grid;place-items:center;align-self:center;justify-self:center;max-width:100%;max-height:100%;z-index:2;position:relative;--mx:0px;--my:0px;--ms:1;--mopacity:1}
+  .media img,.media video{max-width:100%;max-height:70vh;border-radius:10px;box-shadow:0 10px 28px #000a;object-fit:contain;background:#000;opacity:var(--mopacity)}
+  .media video{outline:1px solid #ffffff1a}
+  .media.overlay{position:absolute;inset:0;display:grid;place-items:center;z-index:2}
+  .media.overlay img,.media.overlay video{max-width:90vw;max-height:78vh;transform:translate(var(--mx), var(--my)) scale(var(--ms))}
+  .media.background{position:absolute;inset:0;z-index:0}
+  .media.background img,.media.background video{width:100%;height:100%;object-fit:cover;object-position:calc(50% + var(--mx)) calc(50% + var(--my));filter:brightness(.95)}
+  .media.front{z-index:4}
+
+  /* Control panel */
+  .panel{position:absolute;top:12px;right:12px;z-index:5;background:#0e1015dd;border:1px solid #ffffff22;border-radius:10px;box-shadow:0 8px 28px #000a;padding:.6rem .7rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+  .panel label{font-size:.75rem;color:#cfd3db}
+  .panel input[type="range"]{width:120px}
+  .panel select,.panel button{background:#181a20;color:#fff;border:1px solid #ffffff1a;border-radius:8px;padding:.35rem .5rem;font-weight:700}
+  .panel .small{font-size:.75rem;color:#9aa0aa}
+  .panel .row{display:flex;gap:.5rem;align-items:center}
+  .panel .danger{background:#3b0f10;border-color:#ff5a5f}
+
+  /* Motifs under media/text by default */
+  .motif{position:absolute;inset:0;pointer-events:none;z-index:1}
+  .ring{border:12px solid var(--accent);width:64vmin;height:64vmin;margin:auto;box-sizing:border-box}
+  .spot{width:24vmax;height:24vmax;margin:auto;border-radius:50%;background:radial-gradient(circle at 50% 50%,#ffffffd0,#ffffff20 55%,transparent 70%);filter:blur(6px);mix-blend-mode:screen}
+  .ripples{position:absolute;inset:0;display:grid;place-items:center}
+  .ripples::before{content:"";width:10vmin;height:10vmin;border:2px solid var(--gold);border-radius:50%;opacity:.8;animation:ripple 3s ease-out infinite}
+  @keyframes ripple{0%{transform:scale(1);opacity:.8}80%{transform:scale(10);opacity:0}100%{opacity:0}}
+
+  .grid-snap{position:absolute;inset:8%;display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .grid-snap span{background:#ffffff12;height:clamp(16px,6vmin,48px);display:grid;place-items:center;font-weight:900}
+
+  .hands{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .hands::before,.hands::after{content:"";width:26vmin;height:18vmin;background:conic-gradient(from 90deg,#fff 0 25%,transparent 0 100%);transform:rotate(10deg);opacity:.07;border-radius:6px;box-shadow:0 0 0 2px #ffffff14 inset}
+
+  .seed{width:min(38vmin,60%);height:min(38vmin,60%);margin:auto;border-radius:12%;background:#ffffff08;border:6px solid var(--fg);position:relative}
+  .seed::after{content:"";position:absolute;inset:20%;border-radius:50%;border:6px solid var(--accent)}
+
+  .pressure{position:absolute;inset:15% 10%;border:4px dashed var(--accent);animation:squeeze 3.2s ease-in-out infinite}
+  @keyframes squeeze{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.9)}}
+
+  .scale{position:absolute;inset:0;display:grid;place-items:center}
+  .scale::before,.scale::after{content:"";width:40vmin;height:1.2vmin;background:var(--fg);position:absolute}
+  .scale::after{transform:rotate(90deg)}
+  .slash{position:absolute;inset:0;background:linear-gradient(135deg,transparent 47%,var(--accent) 48% 52%,transparent 53%);opacity:.6}
+
+  .jag{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 22px,#ffffff0c 22px 24px),repeating-linear-gradient(90deg,transparent 0 22px,#ffffff0c 22px 24px);clip-path:polygon(0% 0%,60% 0%,64% 8%,70% 0%,100% 0%,100% 100%,40% 100%,34% 92%,28% 100%,0% 100%);opacity:.25}
+
+  .pure{position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(56px,12vmin,160px);font-weight:900;letter-spacing:.06em}
+  .pure .word{text-transform:uppercase}
+  .pure .word.large{font-size:1.25em}
+
+  .key{position:absolute;inset:0;display:grid;place-items:center}
+  .key svg{width:min(70vmin,85%);height:auto;fill:var(--accent);filter:drop-shadow(0 10px 8px #0008)}
+
+  .accent-corner{position:absolute;top:0;left:0;width:0;height:0;border-right:36px solid transparent;border-bottom:36px solid transparent;border-top:36px solid var(--accent);opacity:.9}
+
+  .wipe-enter{clip-path:inset(0 100% 0 0);animation:wipeIn .7s ease forwards}
+  @keyframes wipeIn{to{clip-path:inset(0 0 0 0)}}
+  .drop-enter{transform:translateY(-8vh);opacity:0;animation:dropIn .6s cubic-bezier(.2,.9,.2,1) forwards}
+  @keyframes dropIn{to{transform:translateY(0);opacity:1}}
+  .bounce-word{display:inline-block;transform:translateY(0);animation:bounce .9s cubic-bezier(.25,.6,.2,1.4) .1s both}
+  @keyframes bounce{0%{transform:translateY(-50%)}60%{transform:translateY(10%)}100%{transform:translateY(0)}}
+
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:0ms!important}}
+
+  .titlebar{position:fixed;left:0;right:0;top:0;padding:calc(6px + var(--safe-top)) 12px 6px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+  .titlebar .brand{font-weight:900;letter-spacing:.08em;text-transform:uppercase;background:var(--accent);color:var(--fg);padding:.25em .5em;border-radius:4px;box-shadow:0 2px 0 #0008}
+  .titlebar .meta{color:#ffffff9a;font-weight:600}
+
+  .dock{position:fixed;left:0;right:0;bottom:0;padding:calc(8px + var(--safe-bottom)) 12px 12px;display:flex;gap:.5rem;justify-content:space-between;align-items:center;background:linear-gradient(to top,#0b0b0ce6,#0b0b0c00);backdrop-filter:blur(6px)}
+  .dock .nav .btn{min-width:3.2rem}
+  .kbd{font-weight:700;font-size:.9em;color:#ffffffb0}
+
+  /* Notes drawer */
+  .notes{position:fixed;right:12px;bottom:calc(64px + var(--safe-bottom));width:min(520px,92vw);max-height:40vh;background:#111318dd;border:1px solid #ffffff1a;border-radius:12px;box-shadow:0 18px 40px #000a;display:none;flex-direction:column;overflow:hidden;backdrop-filter:blur(8px);z-index:9}
+  .notes header{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;background:#0e1015;border-bottom:1px solid #ffffff12}
+  .notes header .title{font-weight:800;letter-spacing:.03em}
+  .notes textarea{width:100%;height:24vh;resize:none;background:#0c0e13;color:var(--fg);border:none;padding:.8rem 1rem;font:inherit;line-height:1.3;outline:none}
+  .notes footer{display:flex;gap:.5rem;justify-content:flex-end;padding:.6rem .8rem;background:#0e1015;border-top:1px solid #ffffff12}
+
+  #file{position:fixed;left:-9999px;top:-9999px}
+</style>
+</head>
+<body>
+<div class="titlebar"><div class="brand">WORLD OF WRESTLING</div><div class="meta">Roland Barthes · Saul Bass Deck</div></div>
+<main class="stage"></main>
+<footer class="dock" role="navigation" aria-label="Controls">
+  <div class="nav">
+    <button class="btn" id="prev" aria-label="Previous slide">◀</button>
+    <button class="btn" id="next" aria-label="Next slide">▶</button>
+    <button class="btn" id="play" aria-pressed="false" aria-label="Play/Pause auto">Auto</button>
+    <button class="btn" id="mediaBtn" aria-label="Add image/video">Media</button>
+    <button class="btn" id="notesBtn" aria-pressed="false" aria-label="Toggle notes">Notes</button>
+    <button class="btn" id="jsonBtn" aria-pressed="false" aria-label="View/Edit slides JSON">JSON</button>
+    <button class="btn" id="exportBtn" aria-label="Export deck JSON">Export</button>
+    <button class="btn" id="importBtn" aria-label="Import deck JSON">Import</button>
+  </div>
+  <div class="hud">
+    <span id="counter">1 / 10</span>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <span class="kbd">Space ▸ next · ←/→ nav</span>
+  </div>
+  <input id="file" type="file" accept="image/*,video/*" />
+  <input id="deckFile" type="file" accept="application/json" style="position:fixed;left:-9999px;top:-9999px" />
+</footer>
+
+<section class="notes" id="notes">
+  <header>
+    <div class="title">Slide Notes</div>
+    <div class="kbd" id="saveHint">auto‑saved</div>
+  </header>
+  <textarea id="notesArea" placeholder="Type notes for this slide…"></textarea>
+  <footer>
+    <button class="btn" id="exportNotes" aria-label="Export notes">Export</button>
+    <button class="btn" id="clearNotes" aria-label="Clear notes for this slide">Clear</button>
+  </footer>
+</section>
+<!-- JSON Editor Panel -->
+<section class="notes" id="jsonPane" aria-label="Slides JSON Editor" style="display:none">
+  <div class="sheet">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <strong>Slides JSON</strong>
+      <span id="jsonStatus" class="kbd"></span>
+      <div class="row">
+        <label class="row" style="align-items:center;gap:6px"><input type="checkbox" id="jsonAdvanced"> <span>Advanced (include cfg + notes)</span></label>
+        <button class="btn ghost" id="jsonPaste">Paste</button>
+        <button class="btn ghost" id="jsonFormat">Format</button>
+        <button class="btn" id="jsonApply">Apply</button>
+        <button class="btn" id="jsonClose">Close</button>
+      </div>
+    </div>
+    <textarea id="jsonArea" spellcheck="false" aria-label="Slides JSON" style="width:100%;min-height:40vh"></textarea>
+  </div>
+  <div class="row" style="justify-content:flex-end;padding:8px 16px">
+    <small>Tip: Paste JSON, then Apply.</small>
+  </div>
+</section>
+<script>
+(function(){
+  const slides = [
+    { theme:"Spectacle as Excess", quote:"The virtue of all-in wrestling is that it is the spectacle of excess.", motif:"excess" },
+    { theme:"Light Without Shadow", quote:"Even hidden in the most squalid halls, wrestling partakes of the nature of the great solar spectacles.", motif:"solar" },
+    { theme:"The Moment, Not the Match", quote:"In wrestling, it is each moment which is intelligible, not the passage of time.", motif:"moment" },
+    { theme:"Gestural Truth", quote:"The function of the wrestler is not to win; it is to go exactly through the motions which are expected of him.", motif:"gesture" },
+    { theme:"Archetypes in Flesh", quote:"The physique of the wrestlers constitutes a basic sign, like a seed containing the whole fight.", motif:"seed" },
+    { theme:"Suffering as Display", quote:"One must always understand why he suffers.", motif:"suffer" },
+    { theme:"Justice as Moral Geometry", quote:"Justice is the embodiment of a possible transgression.", motif:"justice" },
+    { theme:"The Bastard", quote:"He accepts the rules only when they are useful to him and breaks them when he finds it useful to do so.", motif:"bastard" },
+    { theme:"Pure and Full Signification", quote:"Each action discards all parasitic meanings and ceremonially offers to the public a pure and full signification.", motif:"pure" },
+    { theme:"Gods of the Arena", quote:"Wrestlers remain gods because they are, for a few moments, the key which opens Nature.", motif:"gods" }
+  ];
+
+  let idx = 0; let timer = null; const AUTO_MS = 3600;
+  const stage = document.querySelector('.stage');
+  const dotsEl = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  const fileInput = document.getElementById('file');
+  const notesPane = document.getElementById('notes');
+  const notesArea = document.getElementById('notesArea');
+  const saveHint = document.getElementById('saveHint');
+
+  const mediaMap = new Map();
+  // deckId namespace derived from title; can be overridden on import
+  let deckId = (document.title||'wrestling-deck')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const NOTES_KEY = (i)=>`wow:${deckId}:notes:${i}`;
+  const mediaKey = (i)=>`wow:${deckId}:media:${i}`;
+  const mediaCfgKey = (i)=>`wow:${deckId}:cfg:${i}`;
+  const defaultCfg = ()=>({ layout:'side', layer:'middle', mx:0, my:0, ms:1, opacity:1 });
+
+  // restore persisted media
+  for(let i=0;i<slides.length;i++){ const m = load(mediaKey(i)); if(m) mediaMap.set(i,m); }
+
+  slides.forEach((_s,i)=>{ const d=document.createElement('div'); d.className='dot'; d.addEventListener('click',()=>go(i)); dotsEl.appendChild(d); });
+
+  function motifLayer(kind){
+    const m = document.createElement('div'); m.className='motif';
+    switch(kind){
+      case 'excess':{
+        const ring=document.createElement('div'); ring.className='ring drop-enter'; ring.style.boxShadow='0 24px 40px #000a,inset 0 0 0 6px #0008'; m.appendChild(ring);
+        const bq=document.createElement('div'); bq.style.position='absolute'; bq.style.inset='auto 0 8% 0'; bq.style.display='grid'; bq.style.placeItems='center'; bq.innerHTML='<div class="bounce-word" style="font-size:min(16vmin,120px);font-weight:900;letter-spacing:.06em;color:var(--accent);">EXCESS</div>'; m.appendChild(bq); break; }
+      case 'solar':{ const spot=document.createElement('div'); spot.className='spot wipe-enter'; m.appendChild(spot); const rip=document.createElement('div'); rip.className='ripples'; m.appendChild(rip); break; }
+      case 'moment':{ const grid=document.createElement('div'); grid.className='grid-snap'; for(let i=0;i<18;i++){ grid.appendChild(document.createElement('span')); } m.appendChild(grid); break; }
+      case 'gesture':{ const hands=document.createElement('div'); hands.className='hands'; m.appendChild(hands); break; }
+      case 'seed':{ const seed=document.createElement('div'); seed.className='seed drop-enter'; m.appendChild(seed); break; }
+      case 'suffer':{ const press=document.createElement('div'); press.className='pressure'; m.appendChild(press); break; }
+      case 'justice':{ const scale=document.createElement('div'); scale.className='scale'; m.appendChild(scale); const slash=document.createElement('div'); slash.className='slash'; m.appendChild(slash); break; }
+      case 'bastard':{ const jag=document.createElement('div'); jag.className='jag'; m.appendChild(jag); break; }
+      case 'pure':{ const pure=document.createElement('div'); pure.className='pure'; pure.innerHTML='<div class="word">PURE</div>'; m.appendChild(pure); break; }
+      case 'gods':{ const key=document.createElement('div'); key.className='key'; key.innerHTML=`<svg viewBox="0 0 256 128" class="drop-enter" aria-hidden="true" focusable="false"><path d="M20 64a44 44 0 1 0 88 0a44 44 0 1 0 -88 0Zm44-24a24 24 0 1 1 0 48a24 24 0 0 1 0-48Z"/><rect x="88" y="58" width="150" height="12" rx="6"/><rect x="206" y="38" width="18" height="10" rx="2"/><rect x="206" y="80" width="18" height="10" rx="2"/></svg>`; m.appendChild(key); break; }
+    }
+    const corner=document.createElement('div'); corner.className='accent-corner'; m.appendChild(corner); return m;
+  }
+
+  function renderSlide(i){
+    stage.innerHTML='';
+    const s = slides[i];
+    const el = document.createElement('section'); el.className='slide active';
+
+    const theme = document.createElement('div'); theme.className='theme'; theme.innerHTML = `<span class="chip">${(i+1).toString().padStart(2,'0')}</span><span>${s.theme}</span>`;
+
+    const content = document.createElement('div'); content.className='content';
+
+    const quoteWrap = document.createElement('div'); quoteWrap.className='quote';
+    const bq = document.createElement('blockquote'); bq.innerHTML = `&ldquo;<em>${s.quote}</em>&rdquo;`; quoteWrap.appendChild(bq);
+
+    const media = mediaMap.get(i);
+    let mediaEl=null, panel=null; let cfg = load(mediaCfgKey(i)) || defaultCfg();
+    if(media){
+      mediaEl = document.createElement('div'); mediaEl.className='media';
+      if(cfg.layout==='overlay') mediaEl.classList.add('overlay');
+      if(cfg.layout==='background') mediaEl.classList.add('background');
+      if(cfg.layer==='front') mediaEl.classList.add('front');
+      mediaEl.style.setProperty('--mx', cfg.mx+'px');
+      mediaEl.style.setProperty('--my', cfg.my+'px');
+      mediaEl.style.setProperty('--ms', cfg.ms);
+      mediaEl.style.setProperty('--mopacity', cfg.opacity);
+
+      let node;
+      if(media.type.startsWith('image/')){ node=document.createElement('img'); node.src=media.url; node.alt=s.theme; }
+      else { node=document.createElement('video'); node.src=media.url; node.autoplay=true; node.loop=true; node.muted=true; node.controls=true; }
+      mediaEl.appendChild(node);
+
+      panel = document.createElement('div'); panel.className='panel'; panel.innerHTML = `
+        <div class="row">
+          <label>Layout</label>
+          <select id="layoutSel">
+            <option value="side">Side</option>
+            <option value="overlay">Overlay</option>
+            <option value="background">Background</option>
+          </select>
+          <label>Layer</label>
+          <select id="layerSel">
+            <option value="back">Back</option>
+            <option value="middle">Middle</option>
+            <option value="front">Front</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Scale</label><input id="scaleRange" type="range" min="0.3" max="2.0" step="0.01">
+          <label>Opacity</label><input id="opacityRange" type="range" min="0.1" max="1" step="0.01">
+        </div>
+        <div class="row small">Drag to move (overlay/background). Arrows to nudge (Shift=10px). <button id="resetBtn">Reset</button> <button id="removeBtn" class="danger">Remove</button></div>
+      `;
+
+      panel.querySelector('#layoutSel').value = cfg.layout;
+      panel.querySelector('#layerSel').value = cfg.layer;
+      panel.querySelector('#scaleRange').value = cfg.ms;
+      panel.querySelector('#opacityRange').value = cfg.opacity;
+
+      panel.querySelector('#layoutSel').addEventListener('change', (e)=>{ cfg.layout=e.target.value; save(mediaCfgKey(i), cfg); renderSlide(i); });
+      panel.querySelector('#layerSel').addEventListener('change', (e)=>{ cfg.layer=e.target.value; save(mediaCfgKey(i), cfg); renderSlide(i); });
+      panel.querySelector('#scaleRange').addEventListener('input', (e)=>{ cfg.ms=+e.target.value; mediaEl.style.setProperty('--ms', cfg.ms); save(mediaCfgKey(i), cfg); });
+      panel.querySelector('#opacityRange').addEventListener('input', (e)=>{ cfg.opacity=+e.target.value; mediaEl.style.setProperty('--mopacity', cfg.opacity); save(mediaCfgKey(i), cfg); });
+      panel.querySelector('#resetBtn').addEventListener('click', ()=>{ cfg=defaultCfg(); save(mediaCfgKey(i), cfg); renderSlide(i); });
+      panel.querySelector('#removeBtn').addEventListener('click', ()=>{ mediaMap.delete(i); localStorage.removeItem(mediaKey(i)); localStorage.removeItem(mediaCfgKey(i)); renderSlide(i); });
+
+      content.appendChild(mediaEl); content.appendChild(panel); if(cfg.layout==='side') content.classList.add('has-media');
+
+      // drag
+      let dragging=false, sx=0, sy=0;
+      mediaEl.addEventListener('pointerdown', (ev)=>{ dragging=true; sx=ev.clientX; sy=ev.clientY; mediaEl.setPointerCapture(ev.pointerId); });
+      mediaEl.addEventListener('pointermove', (ev)=>{ if(!dragging) return; const dx=ev.clientX-sx, dy=ev.clientY-sy; sx=ev.clientX; sy=ev.clientY; cfg.mx+=dx; cfg.my+=dy; applyXY(); });
+      mediaEl.addEventListener('pointerup', (ev)=>{ dragging=false; mediaEl.releasePointerCapture(ev.pointerId); save(mediaCfgKey(i), cfg); });
+      function applyXY(){ mediaEl.style.setProperty('--mx', cfg.mx+'px'); mediaEl.style.setProperty('--my', cfg.my+'px'); }
+
+      // keyboard nudge
+      window.addEventListener('keydown', (e)=>{
+        const step = e.shiftKey?10:2;
+        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','+','-','=', '_'].includes(e.key)){
+          if(e.key==='ArrowUp') cfg.my -= step;
+          if(e.key==='ArrowDown') cfg.my += step;
+          if(e.key==='ArrowLeft') cfg.mx -= step;
+          if(e.key==='ArrowRight') cfg.mx += step;
+          if(e.key==='+'||e.key==='=') cfg.ms=Math.min(2, +(cfg.ms+0.02).toFixed(2));
+          if(e.key==='-'||e.key==='_') cfg.ms=Math.max(0.3, +(cfg.ms-0.02).toFixed(2));
+          mediaEl.style.setProperty('--ms', cfg.ms); applyXY(); panel.querySelector('#scaleRange').value=cfg.ms; save(mediaCfgKey(i), cfg);
+        }
+      });
+    }
+
+    content.appendChild(quoteWrap);
+    content.appendChild(motifLayer(s.motif));
+
+    const hud = document.createElement('div'); hud.className='hud'; hud.innerHTML = `<span>Theme</span><span>${s.theme}</span>`;
+
+    el.appendChild(theme); el.appendChild(content); el.appendChild(hud); stage.appendChild(el);
+
+    document.querySelectorAll('.dot').forEach((d,j)=> d.classList.toggle('active', j===i));
+    counter.textContent = `${i+1} / ${slides.length}`;
+
+    if(s.motif==='pure'){ const w = stage.querySelector('.pure .word'); w.classList.add('wipe-enter'); setTimeout(()=>{ w.classList.add('large'); },600); }
+
+    notesArea.value = localStorage.getItem(NOTES_KEY(i)) || '';
+  }
+
+  function go(n){ idx = (n + slides.length) % slides.length; renderSlide(idx); }
+  function next(){ go(idx+1); }
+  function prev(){ go(idx-1); }
+
+  const btnPrev = document.getElementById('prev');
+  const btnNext = document.getElementById('next');
+  const btnPlay = document.getElementById('play');
+  const btnMedia = document.getElementById('mediaBtn');
+  const btnNotes = document.getElementById('notesBtn');
+  const btnJson = document.getElementById('jsonBtn');
+  const btnExport = document.getElementById('exportBtn');
+  const btnImport = document.getElementById('importBtn');
+  const deckFile = document.getElementById('deckFile');
+  const jsonPane = document.getElementById('jsonPane');
+  const jsonArea = document.getElementById('jsonArea');
+  const jsonStatus = document.getElementById('jsonStatus');
+  const jsonApply = document.getElementById('jsonApply');
+  const jsonFormat = document.getElementById('jsonFormat');
+  const jsonClose = document.getElementById('jsonClose');
+  const jsonAdvanced = document.getElementById('jsonAdvanced');
+  const jsonPaste = document.getElementById('jsonPaste');
+
+  btnPrev.addEventListener('click', prev);
+  btnNext.addEventListener('click', next);
+  btnPlay.addEventListener('click', ()=>{ const on = btnPlay.getAttribute('aria-pressed')==='true'; on ? stopAuto() : startAuto(); });
+  btnMedia.addEventListener('click', ()=> fileInput.click());
+  btnNotes.addEventListener('click', ()=>{ const on = btnNotes.getAttribute('aria-pressed')==='true'; btnNotes.setAttribute('aria-pressed', String(!on)); notesPane.style.display = on ? 'none' : 'flex'; });
+
+  // JSON editor controls
+  btnJson?.addEventListener('click', ()=>{ const on = btnJson.getAttribute('aria-pressed')==='true'; on?closeJson():openJson(); });
+  function openJson(){
+    btnJson.setAttribute('aria-pressed','true');
+    jsonPane.style.display='flex';
+    jsonStatus.textContent='ready';
+    let payload;
+    if(jsonAdvanced.checked){
+      payload = {
+        version: 1,
+        meta: { title: document.title, exportedAt: new Date().toISOString(), deckId },
+        slides: slides.map((s,i)=>({ theme:s.theme, quote:s.quote, motif:s.motif, cfg: load(mediaCfgKey(i)) || defaultCfg() })),
+        notes: Object.fromEntries(slides.map((_,i)=>[String(i), localStorage.getItem(NOTES_KEY(i)) || ""]))
+      };
+    } else {
+      payload = { slides: slides.map(s=>({ theme:s.theme, quote:s.quote, motif:s.motif })) };
+    }
+    jsonArea.value = JSON.stringify(payload, null, 2);
+  }
+  function closeJson(){ btnJson.setAttribute('aria-pressed','false'); jsonPane.style.display='none'; }
+  jsonFormat.addEventListener('click', ()=>{ try{ const obj=JSON.parse(jsonArea.value); jsonArea.value=JSON.stringify(obj,null,2); jsonStatus.textContent='formatted'; }catch(e){ jsonStatus.textContent='invalid'; }});
+  jsonPaste.addEventListener('click', async ()=>{ try{ if(navigator.clipboard?.readText){ const t=await navigator.clipboard.readText(); if(t) jsonArea.value=t; } else { alert('Clipboard API not available. Paste manually.'); } }catch(e){ alert('Paste failed'); }});
+  jsonApply.addEventListener('click', async ()=>{ try{ const obj=JSON.parse(jsonArea.value||'{}'); if(!Array.isArray(obj.slides)) throw new Error('Missing slides[]'); await importDeck(JSON.stringify(obj)); jsonStatus.textContent='applied'; closeJson(); }catch(e){ jsonStatus.textContent='apply failed'; }});
+  jsonClose.addEventListener('click', closeJson);
+
+  // Export/Import buttons
+  btnExport?.addEventListener('click', async ()=>{ await exportDeck(); });
+  btnImport?.addEventListener('click', ()=> deckFile.click());
+  deckFile?.addEventListener('change', async (e)=>{ const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); await importDeck(text); go(0); });
+
+  function startAuto(){ stopAuto(); btnPlay.setAttribute('aria-pressed','true'); timer = setInterval(next, AUTO_MS); }
+  function stopAuto(){ btnPlay.setAttribute('aria-pressed','false'); if(timer){ clearInterval(timer); timer=null; } }
+
+  window.addEventListener('keydown', (e)=>{ if(['ArrowRight','PageDown'].includes(e.key)) next(); else if(['ArrowLeft','PageUp'].includes(e.key)) prev(); else if(e.key===' '){ e.preventDefault(); next(); } else if(e.key==='n'||e.key==='N'){ btnNotes.click(); } });
+
+  let x0=null,y0=null; window.addEventListener('touchstart', (e)=>{ x0=e.touches[0].clientX; y0=e.touches[0].clientY; }, {passive:true});
+  window.addEventListener('touchend', (e)=>{ if(x0==null) return; const dx=(e.changedTouches[0].clientX-x0), dy=(e.changedTouches[0].clientY-y0); if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>30){ dx<0?next():prev(); } x0=y0=null; }, {passive:true});
+
+  fileInput.addEventListener('change', ()=>{ const f=fileInput.files&&fileInput.files[0]; if(!f) return; const url=URL.createObjectURL(f); mediaMap.set(idx,{type:f.type,url}); save(mediaKey(idx),{type:f.type,url}); if(!load(mediaCfgKey(idx))) save(mediaCfgKey(idx), defaultCfg()); renderSlide(idx); });
+
+  let saveTimer=null; function markSaved(){ saveHint.textContent='saved'; setTimeout(()=>saveHint.textContent='auto‑saved',1200); }
+  notesArea.addEventListener('input', ()=>{ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ localStorage.setItem(NOTES_KEY(idx), notesArea.value); markSaved(); }, 250); });
+  document.getElementById('clearNotes').addEventListener('click', ()=>{ localStorage.removeItem(NOTES_KEY(idx)); notesArea.value=''; markSaved(); });
+  document.getElementById('exportNotes').addEventListener('click', ()=>{ const all={}; for(let i=0;i<slides.length;i++){ const v=localStorage.getItem(NOTES_KEY(i)); if(v!=null) all[i+1]=v; } const blob=new Blob([JSON.stringify(all,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='world-of-wrestling-notes.json'; a.click(); });
+
+  function save(key, obj){ localStorage.setItem(key, JSON.stringify(obj)); }
+  function load(key){ const s = localStorage.getItem(key); try { return s?JSON.parse(s):null } catch { return null }
+  }
+
+  // Canonical export/import
+  async function exportDeck(){
+    const includeMedia = confirm('Export option: Include media (embed data URLs for uploaded assets)?');
+    const includeNotes = confirm('Export option: Include notes?');
+    const includeCfg = confirm('Export option: Include per-slide media config (layout/pos/scale/opacity)?');
+    const pretty = confirm('Export option: Pretty-print JSON? Click Cancel for minified.');
+
+    const payload = { version:1, meta:{ title:document.title, exportedAt:new Date().toISOString(), deckId }, slides:[], media:{}, notes:{} };
+    for(let i=0;i<slides.length;i++){
+      const s=slides[i];
+      const slidePayload = { theme:s.theme, quote:s.quote, motif:s.motif };
+      if(includeCfg) slidePayload.cfg = load(mediaCfgKey(i)) || defaultCfg();
+      payload.slides.push(slidePayload);
+      const m = mediaMap.get(i) || load(mediaKey(i));
+      if(m && m.url){
+        try{
+          if(includeMedia){
+            if(m.url.startsWith('blob:')){
+              const res = await fetch(m.url); const blob = await res.blob();
+              const dataUrl = await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
+              const id = `s${i}`; payload.media[id] = { type:m.type, data:dataUrl }; slidePayload.media = { ref:id };
+            } else {
+              slidePayload.media = { url:m.url, type:m.type };
+            }
+          } else {
+            if(!m.url.startsWith('blob:')) slidePayload.media = { url:m.url, type:m.type };
+          }
+        }catch(e){ console.warn('media export failed', e); }
+      }
+      if(includeNotes){ const note = localStorage.getItem(NOTES_KEY(i)); if(note!=null) payload.notes[i]=note; }
+    }
+    if(!includeNotes) delete payload.notes;
+    if(!includeMedia || Object.keys(payload.media).length===0) delete payload.media;
+    const json = JSON.stringify(payload, null, pretty?2:0);
+    const blob = new Blob([json], { type:'application/json' });
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='world-of-wrestling.deck.json'; a.click(); a.addEventListener('click',()=>URL.revokeObjectURL(a.href));
+  }
+
+  async function importDeck(text){
+    const data = typeof text==='string'? JSON.parse(text) : text;
+    const version = data.version || 1; if(version>1){ console.info('Importing deck version', version); }
+    // Clear existing persisted data
+    for(let i=0;i<slides.length;i++){ localStorage.removeItem(mediaKey(i)); localStorage.removeItem(mediaCfgKey(i)); localStorage.removeItem(NOTES_KEY(i)); mediaMap.delete(i); }
+    if(Array.isArray(data.slides)){
+      if(data.meta && data.meta.deckId){ deckId = String(data.meta.deckId); }
+      for(let i=0;i<data.slides.length && i<slides.length;i++){
+        const s=data.slides[i];
+        if(s.theme) slides[i].theme=s.theme;
+        if(s.quote) slides[i].quote=s.quote;
+        if(s.motif) slides[i].motif=s.motif;
+        if(s.cfg){ localStorage.setItem(mediaCfgKey(i), JSON.stringify(s.cfg)); }
+        if(s.media){
+          if(s.media.ref && data.media && data.media[s.media.ref]){
+            const entry = data.media[s.media.ref]; const res=await fetch(entry.data); const blob=await res.blob(); const url=URL.createObjectURL(blob);
+            mediaMap.set(i,{type:entry.type,url}); localStorage.setItem(mediaKey(i), JSON.stringify({type:entry.type,url}));
+          } else if(s.media.url){
+            mediaMap.set(i,{type:s.media.type||'image/*', url:s.media.url}); localStorage.setItem(mediaKey(i), JSON.stringify({type:s.media.type||'image/*', url:s.media.url}));
+          }
+        }
+      }
+    }
+    if(data.notes){ for(const k of Object.keys(data.notes)){ if(+k<slides.length){ localStorage.setItem(NOTES_KEY(+k), data.notes[k]); } } }
+    renderSlide(idx);
+  }
+
+  renderSlide(idx);
+})();
+</script>
+</body>
+</html>

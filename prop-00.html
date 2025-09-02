@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>THICK PROMPT: Presentation Script</title>
+<meta name="description" content="A filmic, Saul Bass × John Whitney–inspired thick-prompt slide deck that performs operational ekphrasis with remediation loops, mythopoesis, and provenance." />
+<style>
+  :root{
+    --bg:#0b0b0c;           /* deep noir */
+    --fg:#f7f7f2;           /* paper white */
+    --accent:#ff4d2a;       /* Bass orange-red */
+    --accent2:#08f7fe;      /* neon cyan */
+    --accent3:#ffd300;      /* gold pulse */
+    --muted:#9aa0a6;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;background:var(--bg);color:var(--fg);margin:0}
+  body{font-family:var(--sans);line-height:1.4;overflow:hidden}
+  /* Stage */
+  #stage{position:fixed;inset:0;display:grid;grid-template-rows:1fr auto}
+  canvas#viz{position:absolute;inset:0;display:block}
+  /* HUD / Overlays */
+  .hud{position:absolute;inset:0;pointer-events:none}
+  .safe{position:absolute;inset:5vmin;outline:1px solid transparent}
+  .title{
+    position:absolute;left:5vmin;bottom:9vmin;
+    font-size:min(8vmin,6rem);font-weight:800;letter-spacing:.02em;
+    text-transform:uppercase;color:var(--fg);text-shadow:0 4px 40px #0008;
+    pointer-events:none
+  }
+  .title.sm{font-size:min(5vmin,3.4rem)}
+  .title.xs{font-size:min(3.8vmin,2.4rem)}
+  .subtitle{
+    position:absolute;left:5vmin;bottom:5vmin;color:var(--muted);
+    font-size:min(2.8vmin,1.1rem)
+  }
+  .subtitle.sm{font-size:min(2.2vmin,.95rem)}
+  .subtitle.xs{font-size:min(1.9vmin,.85rem)}
+  .chip{
+    display:inline-block;border:1px solid currentColor;border-radius:999px;
+    padding:.25rem .6rem;margin:.15rem .35rem 0 0;font-size:.78rem;opacity:.9
+  }
+  /* Notes (the “thick prompt” anatomy) */
+  #notes{
+    position:absolute;right:0;top:0;width:min(40ch,38vw);height:100%;
+    background:linear-gradient(180deg,#101216f5,#0b0b0ccf);
+    border-left:1px solid #ffffff1a;color:#dfe3ea;backdrop-filter: blur(6px);
+    transform:translateX(100%);transition:transform .35s ease;overflow:auto;
+    padding:1.2rem 1rem 2rem 1.2rem;pointer-events:auto
+  }
+  #notes.open{transform:translateX(0)}
+  #notes h2{margin:.5rem 0 0;font-size:1rem;color:#b8c1d6;letter-spacing:.08em;text-transform:uppercase}
+  #notes .n-title{font-weight:800;color:var(--fg);font-size:1.15rem;margin:.4rem 0 .6rem}
+  #notes p{margin:.4rem 0 .8rem}
+  #notes .meta{font:600 .75rem var(--mono);color:#9fb3c8;opacity:.9}
+  #notes .kv{display:grid;grid-template-columns:auto 1fr;gap:.25rem .6rem;margin:.4rem 0 1rem}
+  #notes .k{font-weight:700;color:#cbd5e1}
+  #notes .v{color:#aab8cc}
+  #help{
+    position:absolute;left:5vmin;top:5vmin;background:#111a;border:1px solid #ffffff20;
+    border-radius:10px;padding:.5rem .8rem;font:600 .8rem var(--mono);color:#cfd8e3;pointer-events:auto
+  }
+  #help kbd{background:#0008;border:1px solid #ffffff33;padding:.08rem .35rem;border-radius:4px;margin:0 .15rem}
+  /* Start gate */
+  #gate{
+    position:absolute;inset:0;background:radial-gradient(120vmin 120vmin at 50% 40%, #1a1a1a 0%, #0b0b0c 60%, #000 100%);
+    display:grid;place-items:center;z-index:10
+  }
+  #gate .card{
+    text-align:center;max-width:70ch;padding:2rem 2rem 2.6rem;border-radius:16px;
+    background:linear-gradient(180deg,#111a,#0b0b0c);border:1px solid #ffffff26;
+    box-shadow:0 30px 80px #000c
+  }
+  #gate h1{margin:0 0 .5rem;font-size:clamp(1.6rem,4vw,2.6rem);letter-spacing:.02em}
+  #gate p{margin:.2rem auto 1rem;color:#c6cdd8;max-width:60ch}
+  #gate button{
+    pointer-events:auto;cursor:pointer;background:var(--accent);color:#000;font-weight:900;
+    text-transform:uppercase;letter-spacing:.05em;border:none;border-radius:999px;
+    padding:.95rem 1.4rem;font-size:1rem;transition:transform .05s ease, filter .2s ease
+  }
+  #gate button:active{transform:translateY(1px)}
+  /* Bottom bar */
+  .bar{
+    grid-row:2;background:linear-gradient(180deg,#0b0b0cd9,#050506f9);
+    border-top:1px solid #ffffff15;display:flex;align-items:center;gap:1rem;
+    padding:.6rem 1rem .5rem;font:600 .8rem var(--mono);color:#aab1bd
+  }
+  .bar .sep{opacity:.35}
+  .bar .status{color:#dfe3ea}
+  .bar .btn{
+    pointer-events:auto;cursor:pointer;background:transparent;border:1px solid #ffffff33;
+    border-radius:8px;color:#cfd8e3;padding:.28rem .6rem
+  }
+  /* Visual motifs */
+  .bass-stroke{position:absolute;inset:0;background:
+      repeating-linear-gradient(25deg,transparent 0 16px,#ffffff06 16px 18px)}
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    .title{text-shadow:none}
+    .bass-stroke{background:none}
+  }
+</style>
+</head>
+<body>
+<main id="stage" role="main" aria-label="Thick Prompt Presentation">
+  <canvas id="viz" aria-hidden="true"></canvas>
+
+  <div class="hud" aria-hidden="true">
+    <div class="bass-stroke"></div>
+    <div class="safe">
+      <div id="slideTitle" class="title"></div>
+      <div id="slideSub" class="subtitle"></div>
+    </div>
+  </div>
+
+  <aside id="notes" aria-label="Thick Prompt Anatomy Panel">
+    <div class="meta">THICK PROMPT • Anatomy</div>
+    <div class="n-title" id="nTitle"></div>
+    <h2>Scene</h2><p id="nScene"></p>
+    <h2>Constraints</h2><p id="nConstraints"></p>
+    <h2>Focalization</h2><p id="nFocal"></p>
+    <h2>Provenance</h2><p id="nProv"></p>
+    <h2>Spec (Slide)</h2>
+    <div class="kv">
+      <div class="k">Loop</div><div class="v">text → model → image → procedure → action</div>
+      <div class="k">Controls</div><div class="v"><kbd>←</kbd><kbd>→</kbd> navigate • <kbd>N</kbd> notes • <kbd>M</kbd> mute</div>
+      <div class="k">Mode</div><div class="v">Bass titles × Whitney motion (no external assets)</div>
+    </div>
+  </aside>
+
+  <section id="gate" aria-label="Start Panel">
+    <div class="card">
+      <h1>THICK PROMPT — Operational Ekphrasis</h1>
+      <p>Saul Bass titles. John Whitney motion. Words that don’t mirror—they act. Click to begin, then use <kbd>→</kbd> / <kbd>←</kbd> to navigate, <kbd>N</kbd> for notes, <kbd>M</kbd> to mute.</p>
+      <button id="startBtn" aria-label="Begin presentation">Begin</button>
+    </div>
+  </section>
+
+  <div class="bar" aria-hidden="true">
+    <span class="status">Slide <span id="idx">1</span>/<span id="count">10</span></span>
+    <span class="sep">|</span>
+    <button class="btn" id="prevBtn" title="Previous (←)">&larr;</button>
+    <button class="btn" id="nextBtn" title="Next (→)">&rarr;</button>
+    <span class="sep">|</span>
+    <button class="btn" id="notesBtn" title="Toggle Notes (N)">Notes</button>
+    <button class="btn" id="muteBtn" title="Mute (M)">Mute</button>
+    <span class="sep">|</span>
+    <span>Presence becomes infrastructure.</span>
+  </div>
+</main>
+
+<script>
+/* ===============================
+   THICK PROMPT: DATA & RENDERING
+   =============================== */
+
+const slides = [
+  {
+    title: "Words Don’t Mirror. They Act.",
+    sub: "Mirror ⇄ Build Script",
+    scene: "Split the frame: left a dark mirror that catches ghosted reflections; right a column of live-scrolling code.",
+    constraints: "No exposition; only contrast. Monochrome with one Bass accent.",
+    focal: "Declarative narrator; the audience is addressed directly.",
+    provenance: "This deck is the demonstration: the talk is a thick prompt.",
+    visual: "split",
+    audio: { base: 110, type: "sine", motif: "contrast" }
+  },
+  {
+    title: "Enargeia: Seeing Through Speech",
+    sub: "Ancient Engine",
+    scene: "Homeric fragment of battle: a flash of shield, a red arc, a shout suspended.",
+    constraints: "No summary—only immediacy; short strokes, hard contrast.",
+    focal: "Witness-light on a listener’s gaze.",
+    provenance: "Classical rhetorical tradition.",
+    visual: "battle",
+    audio: { base: 196, type: "triangle", motif: "staccato" }
+  },
+  {
+    title: "Ekphrasis: World-Machine",
+    sub: "Achilles’ Shield = Cosmos",
+    scene: "Concentric circles radiate: city, field, sea, stars—diagram not illustration.",
+    constraints: "Structure over story; measured motion.",
+    focal: "We stand beside Homer as he speaks.",
+    provenance: "Homeric ekphrasis as cosmogram.",
+    visual: "shield",
+    audio: { base: 246.94, type: "sine", motif: "orbits" }
+  },
+  {
+    title: "Toy Cars on the Table",
+    sub: "Wittgenstein’s Courtroom",
+    scene: "On a table: toy cars, dolls, tiny trees. Only positions and relations matter.",
+    constraints: "No accident narrative; spatial relations only.",
+    focal: "We are the jury: presence enacted before the eyes.",
+    provenance: "Wittgenstein’s notebooks; Paris courtroom reconstructions.",
+    visual: "courtroom",
+    audio: { base: 174.61, type: "square", motif: "grid" }
+  },
+  {
+    title: "The Loop",
+    sub: "text → model → image → procedure → action",
+    scene: "A cycle lights one segment at a time as the narrator traces the chain.",
+    constraints: "No decoration, only loop; rhythmically sequenced.",
+    focal: "Guided pointer through the loop.",
+    provenance: "Remediation chain as operational engine.",
+    visual: "loop",
+    audio: { base: 220, type: "sine", motif: "stepped" }
+  },
+  {
+    title: "Thick Prompt Spec",
+    sub: "Scene-Graph • Constraints • Focalization • Provenance",
+    scene: "Four stacked blocks feeding a composite image; data flows visible.",
+    constraints: "Elemental geometry; no photoreal texture.",
+    focal: "Architect’s view of system inputs.",
+    provenance: "Research prototypes; prompt corpora; logs.",
+    visual: "spec",
+    audio: { base: 261.63, type: "triangle", motif: "build" }
+  },
+  {
+    title: "Mythopoesis: Daphne",
+    sub: "Metamorphosis as Operational Script",
+    scene: "A body elongates; bark wraps; arms leaf. Frames become a tree.",
+    constraints: "Keep motion alive; no freeze.",
+    focal: "We watch as Apollo watches.",
+    provenance: "Ovid remediated as staged transformation.",
+    visual: "daphne",
+    audio: { base: 329.63, type: "sine", motif: "gliss" }
+  },
+  {
+    title: "Prompting Myth into System",
+    sub: "Your Prototypes",
+    titleClass: "xs",
+    subClass: "xs",
+    scene: "Screens of prompt logs, revision chains, and a generative output grid.",
+    constraints: "Foreground one motif: transformation.",
+    focal: "The system’s eye reveals its making.",
+    provenance: "Research archive and version history.",
+    visual: "prototype",
+    audio: { base: 185, type: "triangle", motif: "ticks" }
+  },
+  {
+    title: "Presence Becomes Infrastructure",
+    sub: "Courtroom • Newsroom • AI Lab",
+    scene: "Three panels linked by arrows; one chain across domains.",
+    constraints: "Show linkage, not detail.",
+    focal: "Audience recognizes their place in the chain.",
+    provenance: "Historical throughline and contemporary platforms.",
+    visual: "chain",
+    audio: { base: 207.65, type: "sine", motif: "link" }
+  },
+  {
+    title: "Not the Magic Word — The Model.",
+    sub: "Closing",
+    scene: "Black screen. One line. Hold.",
+    constraints: "Silence.",
+    focal: "The phrase is the act.",
+    provenance: "This talk as demonstration.",
+    visual: "closing",
+    audio: { base: 0, type: "none", motif: "silence" }
+  }
+];
+
+const state = {
+  i: 0,
+  started: false,
+  muted: false,
+  t0: performance.now(),
+  width: 0, height: 0,
+  ctx: null,
+  raf: 0
+};
+
+/* ===============================
+   AUDIO: minimal generative bed
+   =============================== */
+let AC, master, osc, lfo;
+function initAudio(){
+  if(AC) return;
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  master = AC.createGain(); master.gain.value = 0.15; master.connect(AC.destination);
+  lfo = AC.createOscillator(); const lfoGain = AC.createGain();
+  lfo.frequency.value = 0.08; lfoGain.gain.value = 40; lfo.connect(lfoGain);
+
+  osc = AC.createOscillator(); const oGain = AC.createGain();
+  osc.type = "sine"; osc.frequency.value = 110;
+  lfoGain.connect(osc.frequency);
+  osc.connect(oGain); oGain.gain.value = 0.0; oGain.connect(master);
+  osc.start(); lfo.start();
+
+  // subtle reverb-ish delay
+  const delay = AC.createDelay(0.75); delay.delayTime.value = 0.22;
+  const fb = AC.createGain(); fb.gain.value = 0.25;
+  oGain.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(master);
+}
+function setAudioForSlide(s){
+  if(!AC) return;
+  const a = slides[s].audio || {};
+  const freq = a.base || 0;
+  if(freq<=0){ master.gain.linearRampToValueAtTime(0.0, AC.currentTime+0.2); return; }
+  const type = a.type || "sine";
+  osc.type = type;
+  // envelope
+  master.gain.linearRampToValueAtTime(state.muted?0:0.15, AC.currentTime+0.15);
+  // motif tweak
+  let lf = 0.06;
+  switch(a.motif){
+    case "contrast": lf=0.03; break;
+    case "staccato": lf=0.15; break;
+    case "orbits": lf=0.05; break;
+    case "grid": lf=0.09; break;
+    case "stepped": lf=0.12; break;
+    case "build": lf=0.07; break;
+    case "gliss": lf=0.02; break;
+    case "ticks": lf=0.2; break;
+    case "link": lf=0.1; break;
+  }
+  lfo.frequency.linearRampToValueAtTime(lf, AC.currentTime+0.25);
+  // quantize frequency to just intonation-ish small set for Bass/Whitney vibe
+  const ratios=[1, 6/5, 4/3, 3/2, 5/3, 2];
+  const r = ratios[(s+3)%ratios.length];
+  osc.frequency.linearRampToValueAtTime(freq*r, AC.currentTime+0.2);
+}
+
+/* ===============================
+   RENDER LOOP (Canvas 2D)
+   =============================== */
+const canvas = document.getElementById("viz");
+const ctx = canvas.getContext("2d");
+state.ctx = ctx;
+// Resolve CSS custom font family for canvas usage
+const SANS = getComputedStyle(document.body).getPropertyValue('--sans');
+
+function resize(){
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const cssW = innerWidth;
+  const cssH = (innerHeight - 42);
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  canvas.style.width = cssW+"px";
+  canvas.style.height = cssH+"px";
+  // draw using CSS pixel coordinates for consistent sizing across DPR
+  state.width = cssW;
+  state.height = cssH;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener("resize", resize);
+
+function draw(t){
+  const {width:w, height:h} = state;
+  const slide = slides[state.i];
+  ctx.clearRect(0,0,w,h);
+  // Background wash (Whitney-esque)
+  const g = ctx.createRadialGradient(w*0.52, h*0.45, h*0.05, w*0.52, h*0.45, h*0.9);
+  g.addColorStop(0, "#151516");
+  g.addColorStop(1, "#050506");
+  ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+
+  // Dispatch visual
+  const tsec = (t - state.t0)/1000;
+  visuals[slide.visual]?.(ctx, w, h, tsec);
+
+  state.raf = requestAnimationFrame(draw);
+}
+
+/* ===============================
+   VISUALS
+   =============================== */
+const visuals = {
+  split(ctx,w,h,t){
+    // Left: mirror sheen
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0,0,w/2,h); ctx.clip();
+    const grd = ctx.createLinearGradient(0,0,w/2,h);
+    grd.addColorStop(0, "#0a0a0b"); grd.addColorStop(.5, "#1a1b1d");
+    grd.addColorStop(1, "#0c0d0f");
+    ctx.fillStyle = grd; ctx.fillRect(0,0,w/2,h);
+    // ghost reflection stripes
+    for(let i=0;i<7;i++){
+      ctx.globalAlpha = 0.08 + 0.04*Math.sin(t*0.3+i);
+      ctx.fillStyle = "#ffffff";
+      const x = (w/2)*(.1 + .12*i);
+      ctx.fillRect(x, 0, 6, h);
+    }
+    // "MIRROR"
+    ctx.globalAlpha=0.12; ctx.fillStyle="#fff"; ctx.font=`${Math.floor(h*0.18)}px ${SANS}`;
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText("MIRROR", w*0.25, h*0.5);
+    ctx.restore();
+
+    // Right: code scroll
+    ctx.save();
+    ctx.beginPath(); ctx.rect(w/2,0,w/2,h); ctx.clip();
+    ctx.fillStyle="#0c0d0f"; ctx.fillRect(w/2,0,w/2,h);
+    ctx.font=`${Math.floor(h*0.028)}px ${getComputedStyle(document.body).getPropertyValue('--mono')}`;
+    const lines = 24, lh = h/lines;
+    for(let i=0;i<lines+2;i++){
+      const y = ( (i*lh + ((t*80)%lh)) % h );
+      ctx.fillStyle = i%5===0? "#ff4d2a" : "#aab1bd88";
+      const code = (i%5===0) ? "build() { presence(); legitimize(); act(); }"
+                              : "text→model→image→procedure→action;";
+      ctx.fillText(code, w*0.54, y);
+    }
+    ctx.restore();
+  },
+
+  battle(ctx,w,h,t){
+    // flashes / strokes
+    ctx.strokeStyle="#ff4d2a"; ctx.lineWidth=4;
+    for(let i=0;i<12;i++){
+      ctx.globalAlpha = 0.08 + 0.05*Math.sin(t*2+i);
+      ctx.beginPath();
+      const x1 = (w*0.15) + Math.sin(t*1.3+i)*w*0.35;
+      const y1 = (h*0.2) + Math.cos(t*1.5+i)*h*0.3;
+      const x2 = x1 + Math.cos(i*1.7)*w*0.15;
+      const y2 = y1 + Math.sin(i*1.9)*h*0.1;
+      ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+    // shield flash
+    const r = Math.min(w,h)*0.12*(1+0.06*Math.sin(t*6));
+    const cx = w*0.7, cy = h*0.55;
+    const grad = ctx.createRadialGradient(cx,cy, r*0.2, cx,cy, r);
+    grad.addColorStop(0,"#ffd300");grad.addColorStop(1,"#ff4d2a");
+    ctx.globalAlpha = 0.8; ctx.fillStyle=grad; ctx.beginPath();
+    ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+  },
+
+  shield(ctx,w,h,t){
+    // concentric orbits
+    const cx=w*0.5, cy=h*0.55;
+    for(let i=1;i<=8;i++){
+      const r = Math.min(w,h)*0.06*i;
+      ctx.strokeStyle = i%2? "#ffffff18" : "#08f7fe33";
+      ctx.lineWidth = i%2? 2:1;
+      ctx.beginPath();
+      ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+      // orbiting dot
+      const a = t* (0.2 + i*0.03);
+      const x = cx + Math.cos(a)*r, y = cy + Math.sin(a)*r;
+      ctx.fillStyle= i%2? "#ffd300" : "#08f7fe";
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath(); ctx.arc(x,y, 4, 0, Math.PI*2); ctx.fill();
+    }
+  },
+
+  courtroom(ctx,w,h,t){
+    // tabletop
+    ctx.fillStyle="#141517"; ctx.fillRect(w*0.1,h*0.2,w*0.8,h*0.6);
+    // cars as rectangles, dolls as circles, trees as triangles
+    const items = [
+      {x:.25,y:.55, type:"car", hue:"#ff4d2a"},
+      {x:.6, y:.45, type:"car", hue:"#08f7fe"},
+      {x:.48,y:.38, type:"doll", hue:"#ffd300"},
+      {x:.7, y:.6,  type:"tree", hue:"#a1ff0a"}
+    ];
+    items.forEach(o=>{
+      ctx.save();
+      ctx.translate(w*o.x, h*o.y);
+      switch(o.type){
+        case "car":
+          ctx.fillStyle=o.hue; ctx.fillRect(-40,-18,80,36);
+          ctx.fillStyle="#000000aa"; ctx.fillRect(-18,-22,36,10);
+          break;
+        case "doll":
+          ctx.fillStyle=o.hue; ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.fill();
+          ctx.fillRect(-6,0,12,28);
+          break;
+        case "tree":
+          ctx.fillStyle=o.hue; ctx.beginPath();
+          ctx.moveTo(0,-32); ctx.lineTo(-20,18); ctx.lineTo(20,18); ctx.closePath(); ctx.fill();
+          ctx.fillStyle="#4b5b6a"; ctx.fillRect(-4,18,8,26);
+          break;
+      }
+      ctx.restore();
+    });
+    // relations lines
+    ctx.strokeStyle="#ffffff33"; ctx.setLineDash([6,8]); ctx.lineWidth=2;
+    link(.25,.55,.48,.38); link(.6,.45,.7,.6);
+    function link(ax,ay,bx,by){
+      ctx.beginPath(); ctx.moveTo(w*ax,h*ay); ctx.lineTo(w*bx,h*by); ctx.stroke();
+    }
+  },
+
+  loop(ctx,w,h,t){
+    const cx=w*0.5, cy=h*0.5, R=Math.min(w,h)*0.33;
+    const labels=["Text","Model","Image","Procedure","Action"];
+    for(let i=0;i<5;i++){
+      const a = (-Math.PI/2) + i*(2*Math.PI/5);
+      const x = cx + Math.cos(a)*R, y = cy + Math.sin(a)*R;
+      const active = Math.floor(t*1.25)%5 === i;
+      ctx.fillStyle = active ? "#ffd300" : "#cbd5e155";
+      ctx.beginPath(); ctx.arc(x,y, Math.min(w,h)*0.11, 0, Math.PI*2); ctx.fill();
+      // label backplate for readability
+      const fontSize = Math.max(34, Math.floor(h*0.09));
+      ctx.font = `700 ${fontSize}px ${SANS}`; ctx.textAlign="center"; ctx.textBaseline="middle";
+      const txt = labels[i];
+      const m = ctx.measureText(txt);
+      const padX = 28, padY = 16;
+      const bw = Math.ceil(m.width) + padX*2;
+      const bh = fontSize + padY*2;
+      ctx.fillStyle = active ? "#ffd300" : "#0b0b0cee";
+      // rounded rect (always draw backplate)
+      const rx = x - bw/2, ry = y - bh/2, r = 8;
+      ctx.beginPath();
+      ctx.moveTo(rx+r, ry);
+      ctx.lineTo(rx+bw-r, ry);
+      ctx.quadraticCurveTo(rx+bw, ry, rx+bw, ry+r);
+      ctx.lineTo(rx+bw, ry+bh-r);
+      ctx.quadraticCurveTo(rx+bw, ry+bh, rx+bw-r, ry+bh);
+      ctx.lineTo(rx+r, ry+bh);
+      ctx.quadraticCurveTo(rx, ry+bh, rx, ry+bh-r);
+      ctx.lineTo(rx, ry+r);
+      ctx.quadraticCurveTo(rx, ry, rx+r, ry);
+      ctx.closePath();
+      ctx.fill();
+      // text with shadow
+      const prevShadowColor = ctx.shadowColor, prevShadowBlur = ctx.shadowBlur;
+      ctx.fillStyle = active ? "#000" : "#eef2f7";
+      ctx.shadowColor = "#000"; ctx.shadowBlur = 12;
+      ctx.fillText(txt, x, y);
+      ctx.shadowColor = prevShadowColor; ctx.shadowBlur = prevShadowBlur;
+    }
+    // arrows
+    ctx.strokeStyle="#08f7feaa"; ctx.lineWidth=3; ctx.setLineDash([]);
+    for(let i=0;i<5;i++){
+      arcArrow(i, (i+1)%5);
+    }
+    function arcArrow(i,j){
+      const a1=(-Math.PI/2)+i*(2*Math.PI/5);
+      const a2=(-Math.PI/2)+j*(2*Math.PI/5);
+      const r=R;
+      ctx.beginPath();
+      ctx.arc(cx,cy,r, a1+0.4, a2-0.4);
+      ctx.stroke();
+      // arrowhead
+      const ah = a2-0.4;
+      const ax = cx + Math.cos(ah)*r, ay = cy + Math.sin(ah)*r;
+      ctx.beginPath();
+      ctx.moveTo(ax,ay);
+      ctx.lineTo(ax-10*Math.cos(ah-0.3), ay-10*Math.sin(ah-0.3));
+      ctx.lineTo(ax-10*Math.cos(ah+0.3), ay-10*Math.sin(ah+0.3));
+      ctx.closePath(); ctx.fillStyle="#08f7fe"; ctx.fill();
+    }
+  },
+
+  spec(ctx,w,h,t){
+    const bw = Math.min(w,h)*0.165, bh = Math.min(w,h)*0.072;
+    const sx = w*0.18, sy = h*0.24, gap = bh*0.42;
+    const blocks = ["Scene-Graph","Constraints","Focalization","Provenance"];
+    for(let i=0;i<4;i++){
+      ctx.fillStyle="#121318"; ctx.strokeStyle="#ffffff2a"; ctx.lineWidth=2;
+      ctx.fillRect(sx, sy + i*(bh+gap), bw, bh);
+      ctx.strokeRect(sx, sy + i*(bh+gap), bw, bh);
+      // label backplate + larger font
+      const fontSize2 = Math.max(18, Math.floor(h*0.042));
+      ctx.font=`700 ${fontSize2}px ${SANS}`; ctx.textAlign="left"; ctx.textBaseline="middle";
+      const label = blocks[i];
+      const m2 = ctx.measureText(label);
+      const px = 7, py = 6;
+      const lw = Math.ceil(m2.width) + px*2;
+      const lh = fontSize2 + py*2;
+      const ly = sy + i*(bh+gap) + bh/2;
+      // backplate
+      ctx.fillStyle = "#0b0b0cf0";
+      const rx2 = sx+12, ry2 = ly - lh/2, r2 = 8;
+      ctx.beginPath();
+      ctx.moveTo(rx2+r2, ry2);
+      ctx.lineTo(rx2+lw-r2, ry2);
+      ctx.quadraticCurveTo(rx2+lw, ry2, rx2+lw, ry2+r2);
+      ctx.lineTo(rx2+lw, ry2+lh-r2);
+      ctx.quadraticCurveTo(rx2+lw, ry2+lh, rx2+lw-r2, ry2+lh);
+      ctx.lineTo(rx2+r2, ry2+lh);
+      ctx.quadraticCurveTo(rx2, ry2+lh, rx2, ry2+lh-r2);
+      ctx.lineTo(rx2, ry2+r2);
+      ctx.quadraticCurveTo(rx2, ry2, rx2+r2, ry2);
+      ctx.closePath();
+      ctx.fill();
+      // label
+      const prevShadowColor2 = ctx.shadowColor, prevShadowBlur2 = ctx.shadowBlur;
+      ctx.fillStyle="#ffffff";
+      ctx.shadowColor = "#000"; ctx.shadowBlur = 7;
+      ctx.fillText(label, sx+12+px, ly);
+      ctx.shadowColor = prevShadowColor2; ctx.shadowBlur = prevShadowBlur2;
+      // flow line
+      ctx.strokeStyle="#ff4d2a"; ctx.beginPath();
+      ctx.moveTo(sx+bw+12, sy + i*(bh+gap) + bh/2);
+      ctx.lineTo(w*0.66-20, h*0.38 + i*12); ctx.stroke();
+    }
+    // composite image target
+    ctx.fillStyle="#0f1115"; ctx.strokeStyle="#ffffff2a"; ctx.lineWidth=2;
+    const tx = w*0.65, ty = h*0.32, tw = Math.min(w,h)*0.26, th = Math.min(w,h)*0.25;
+    ctx.fillRect(tx,ty,tw,th); ctx.strokeRect(tx,ty,tw,th);
+    // composite shimmer (Whitney-style lissajous)
+    const cx = tx+tw/2, cy = ty+th/2;
+    ctx.save(); ctx.beginPath(); ctx.rect(tx,ty,tw,th); ctx.clip();
+    ctx.strokeStyle="#08f7feaa"; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let a=0;a<Math.PI*2;a+=0.01){
+      const x = cx + Math.sin(3*a + t*0.8)*tw*0.35;
+      const y = cy + Math.sin(4*a + t*0.9)*th*0.35;
+      a===0? ctx.moveTo(x,y): ctx.lineTo(x,y);
+    }
+    ctx.stroke(); ctx.restore();
+  },
+
+  daphne(ctx,w,h,t){
+    // morph silhouette → tree using layered lines
+    const cx=w*0.5, base=h*0.7;
+    // trunk/body
+    ctx.strokeStyle="#ffd300"; ctx.lineWidth=6; ctx.beginPath();
+    const sway=Math.sin(t*1.2)*18;
+    ctx.moveTo(cx,base);
+    ctx.bezierCurveTo(cx-10, base-120, cx+20+sway, base-240, cx+sway*0.3, base-320);
+    ctx.stroke();
+    // arms/branches
+    ctx.lineWidth=4; ctx.strokeStyle="#ff4d2a";
+    for(let i=0;i<6;i++){
+      const angle=(-Math.PI/2)+ (i-2.5)*0.22 + Math.sin(t*0.7+i)*0.05;
+      const len= 140 + (i%2?30:-10);
+      ctx.beginPath();
+      ctx.moveTo(cx+sway*0.3, base-320);
+      ctx.lineTo(cx+sway*0.3 + Math.cos(angle)*len, base-320 + Math.sin(angle)*len);
+      ctx.stroke();
+    }
+    // leaves
+    ctx.fillStyle="#a1ff0a"; ctx.globalAlpha=0.6;
+    for(let i=0;i<120;i++){
+      const r = Math.random()*1.1;
+      const x = cx + (Math.random()*2-1)*(160 + 30*Math.sin(t*0.6+i));
+      const y = base-320 + (Math.random()*2-1)*(120 + 20*Math.cos(t*0.7+i));
+      if((i+t*10)%3<1) ctx.fillRect(x,y,2,2);
+    }
+    ctx.globalAlpha=1;
+  },
+
+  prototype(ctx,w,h,t){
+    // faux UI with logs
+    const panel = (x,y,wid,hgt,label) => {
+      ctx.fillStyle="#0f1115"; ctx.strokeStyle="#ffffff1f";
+      ctx.fillRect(x,y,wid,hgt); ctx.strokeRect(x,y,wid,hgt);
+      ctx.fillStyle="#cfd8e3"; ctx.font=`${Math.floor(h*0.018)}px var(--sans)`;
+      ctx.textAlign="left"; ctx.textBaseline="top";
+      ctx.fillText(label, x+10, y+8);
+    };
+    const leftW = w*0.45, rightW = w*0.44;
+    panel(w*0.07,h*0.12,leftW,h*0.68,"Prompt Logs");
+    panel(w*0.54,h*0.12,rightW,h*0.32,"Revision Chain");
+    panel(w*0.54,h*0.48,rightW,h*0.32,"Generated Grid");
+
+    // Logs
+    ctx.font=`${Math.floor(h*0.017)}px var(--mono)`; ctx.fillStyle="#aab1bd";
+    for(let i=0;i<12;i++){
+      const ts = new Date(Date.now()- (12-i)*3217).toISOString().slice(11,19);
+      const y = h*0.18 + i*(h*0.045);
+      const flick = (Math.floor(t*3)+i)%12===0? "⋯" : "";
+      ctx.fillText(`[${ts}] scene-graph: entity:${(i%3?'shield':'daphne')} rel:${i%2?'→':'↔'} ${flick}`, w*0.09, y);
+    }
+    // Chain nodes
+    const steps=["draft","refine","constrain","provenance","render"];
+    ctx.font=`${Math.floor(h*0.016)}px var(--sans)`;
+    for(let i=0;i<steps.length;i++){
+      const x = w*0.58 + i*(rightW/steps.length);
+      const y = h*0.2 + Math.sin(t*0.8+i)*6;
+      ctx.fillStyle = i%2? "#ffd300" : "#08f7fe";
+      ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#dfe3ea"; ctx.fillText(steps[i], x-24, y+18);
+      if(i<steps.length-1){
+        ctx.strokeStyle="#ffffff33"; ctx.beginPath(); ctx.moveTo(x+12,y); ctx.lineTo(x+ (rightW/steps.length)-12, y); ctx.stroke();
+      }
+    }
+    // Grid
+    const cols=3, rows=2, gw=(rightW-40)/cols, gh=(h*0.28-30)/rows;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const x = w*0.56 + 10 + c*(gw+10);
+        const y = h*0.52 + 10 + r*(gh+10);
+        ctx.fillStyle="#121318"; ctx.fillRect(x,y,gw,gh);
+        // tiny generative Whitney curve
+        ctx.save(); ctx.beginPath(); ctx.rect(x,y,gw,gh); ctx.clip();
+        ctx.strokeStyle = c%2? "#08f7feaa" : "#ff4d2aaa";
+        ctx.lineWidth=1.2; ctx.beginPath();
+        for(let a=0;a<Math.PI*2;a+=0.02){
+          const px = x+gw/2 + Math.sin(3*a + t*0.4+c)*gw*0.35;
+          const py = y+gh/2 + Math.sin(2*a + t*0.5+r)*gh*0.35;
+          a===0? ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.stroke(); ctx.restore();
+      }
+    }
+  },
+
+  chain(ctx,w,h,t){
+    const panels=3, gap=w*0.02, pw=(w - gap*(panels+1))/panels, ph=h*0.55, y=h*0.22;
+    const names=["Courtroom","Newsroom","AI Lab"];
+    for(let i=0;i<panels;i++){
+      const x = gap + i*(pw+gap);
+      ctx.fillStyle="#0f1115"; ctx.fillRect(x,y,pw,ph);
+      ctx.strokeStyle="#ffffff1f"; ctx.strokeRect(x,y,pw,ph);
+      ctx.fillStyle="#cfd8e3"; ctx.font=`${Math.floor(h*0.028)}px var(--sans)`;
+      ctx.fillText(names[i], x+12, y+10);
+      // simple icon per panel
+      ctx.strokeStyle="#ffd300"; ctx.lineWidth=2;
+      ctx.beginPath();
+      if(i===0){ // easel/table
+        ctx.rect(x+pw*.2, y+ph*.35, pw*.6, ph*.15);
+      }else if(i===1){ // chart
+        ctx.moveTo(x+pw*.2,y+ph*.7); ctx.lineTo(x+pw*.45,y+ph*.5); ctx.lineTo(x+pw*.7,y+ph*.62);
+      }else{ // console
+        ctx.rect(x+pw*.25, y+ph*.35, pw*.5, ph*.2);
+      }
+      ctx.stroke();
+    }
+    // links
+    ctx.strokeStyle="#08f7fe"; ctx.lineWidth=3;
+    const y2 = y+ph*.5;
+    ctx.beginPath();
+    ctx.moveTo(gap+pw, y2);
+    ctx.lineTo(gap+pw+gap/2, y2);
+    ctx.lineTo(gap+pw+gap/2, y2);
+    ctx.lineTo(gap+pw+gap/2+pw, y2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(gap+2*pw+gap, y2);
+    ctx.lineTo(gap+2*pw+2*gap- gap/2, y2);
+    ctx.lineTo(gap+3*pw+2*gap - gap, y2);
+    ctx.stroke();
+  },
+
+  closing(ctx,w,h,t){
+    // intentionally blank; title overlay carries the line
+  }
+};
+
+/* ===============================
+   UI / BINDINGS
+   =============================== */
+const titleEl = document.getElementById("slideTitle");
+const subEl = document.getElementById("slideSub");
+const idxEl = document.getElementById("idx");
+const countEl = document.getElementById("count");
+countEl.textContent = slides.length.toString();
+
+const notesEl = document.getElementById("notes");
+const nTitle = document.getElementById("nTitle");
+const nScene = document.getElementById("nScene");
+const nConstraints = document.getElementById("nConstraints");
+const nFocal = document.getElementById("nFocal");
+const nProv = document.getElementById("nProv");
+
+function renderSlide(){
+  const s = slides[state.i];
+  titleEl.textContent = s.title;
+  subEl.textContent = s.sub || "";
+  // apply per-slide title/subtitle class variants
+  titleEl.className = `title${s.titleClass ? ' '+s.titleClass : ''}`;
+  subEl.className = `subtitle${s.subClass ? ' '+s.subClass : ''}`;
+  idxEl.textContent = (state.i+1).toString();
+
+  // notes
+  nTitle.textContent = s.title;
+  nScene.textContent = s.scene;
+  nConstraints.textContent = s.constraints;
+  nFocal.textContent = s.focal;
+  nProv.textContent = s.provenance;
+
+  setAudioForSlide(state.i);
+}
+
+function next(){ state.i = (state.i+1) % slides.length; renderSlide(); }
+function prev(){ state.i = (state.i-1+slides.length) % slides.length; renderSlide(); }
+
+document.getElementById("nextBtn").addEventListener("click", next);
+document.getElementById("prevBtn").addEventListener("click", prev);
+document.getElementById("notesBtn").addEventListener("click", ()=>notesEl.classList.toggle("open"));
+document.getElementById("muteBtn").addEventListener("click", toggleMute);
+
+addEventListener("keydown", (e)=>{
+  if(e.key==="ArrowRight") next();
+  else if(e.key==="ArrowLeft") prev();
+  else if(e.key.toLowerCase()==="n") notesEl.classList.toggle("open");
+  else if(e.key.toLowerCase()==="m") toggleMute();
+});
+
+function toggleMute(){
+  state.muted = !state.muted;
+  if(AC){
+    const target = state.muted ? 0 : 0.15;
+    master.gain.linearRampToValueAtTime(target, AC.currentTime+0.1);
+  }
+  document.getElementById("muteBtn").textContent = state.muted? "Unmute" : "Mute";
+}
+
+/* ===============================
+   START
+   =============================== */
+document.getElementById("startBtn").addEventListener("click", async ()=>{
+  state.started = true;
+  document.getElementById("gate").style.display="none";
+  resize();
+  renderSlide();
+  if(!AC){
+    initAudio();
+    try{ await AC.resume(); }catch{}
+  }
+  cancelAnimationFrame(state.raf);
+  state.t0 = performance.now();
+  state.raf = requestAnimationFrame(draw);
+});
+</script>
+</body>
+</html>

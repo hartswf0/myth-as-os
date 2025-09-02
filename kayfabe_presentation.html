@@ -1,0 +1,498 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Political Kayfabe — Presentation</title>
+<style>
+  :root {
+    --bg: #0b0c10;
+    --fg: #e6edf3;
+    --muted: #9da7b3;
+    --accent: #1FB8CD;
+    --accent2: #DB4545;
+    --card: #11131a;
+  }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font: 18px/1.45 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+  .deck { height: 100%; display: grid; place-items: center; }
+  .slide { width: 92vw; height: 92vh; box-sizing: border-box; padding: 48px; background: var(--card); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 20px; }
+  .slide.divider { background: linear-gradient(135deg, #11131a, #151a24 60%); border: 1px solid rgba(255,255,255,.06); }
+  h1 { font-size: 56px; margin: 0 0 8px; letter-spacing: .5px; }
+  h2 { font-size: 36px; margin: 0 0 8px; color: var(--accent); }
+  h3 { font-size: 28px; margin: 0; }
+  h4 { font-size: 18px; margin: 12px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  p { margin: 0; }
+  .byline { color: var(--muted); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .callout { margin-top: auto; padding: 16px 18px; border-left: 4px solid var(--accent2); background: rgba(219,69,69,.08); border-radius: 8px; }
+  .meta { margin-top: 8px; color: var(--muted); }
+  .chart { max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 12px; background: #0e1117; border: 1px solid rgba(255,255,255,.06); }
+  .nav { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); color: var(--muted); font-size: 14px; }
+  .progress { position: fixed; top: 0; left: 0; height: 4px; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .2s ease; }
+  @media print {
+    body { background: white; color: black; }
+    .slide { width: auto; height: auto; box-shadow: none; border-radius: 0; page-break-after: always; background: white; color: black; }
+    .progress, .nav { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class=progress id=progress></div>
+<div class=deck id=deck>
+  
+<section class=slide>
+  <h1>Political Kayfabe</h1>
+  <h2>Concepts, Examples, and Psychology</h2>
+  <p class=byline>Auto-generated from CSVs in exported-assets</p>
+</section>
+
+<section class=slide>
+  <h2>System Diagram</h2>
+  <img class=chart src="weinstein_political_kayfabe.png" alt="Weinstein Political Kayfabe Diagram"/>
+</section>
+
+<section class=slide divider>
+  <h2>Core Concepts</h2>
+  <p>Definitions, origins in wrestling, and political applications.</p>
+</section>
+
+<section class=slide>
+  <h3>Kayfabe</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Definition</h4>
+      <p>System of layered falsehoods maintained by mutual agreement between performers and audience</p>
+    </div>
+    <div>
+      <h4>Wrestling Origin</h4>
+      <p>Agreement not to reveal matches are predetermined</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Application</h4>
+    <p>Maintaining illusion of meaningful choice between pre-approved candidates</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Kayfabrication</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Definition</h4>
+      <p>The process by which real systems transition to fake but more manageable versions</p>
+    </div>
+    <div>
+      <h4>Wrestling Origin</h4>
+      <p>Transition from dangerous real wrestling to safer scripted entertainment</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Application</h4>
+    <p>Converting genuine democracy into managed spectacle</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>GIN (Gated Institutional Narrative)</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Definition</h4>
+      <p>Protective narrative framework that gates institutional discourse</p>
+    </div>
+    <div>
+      <h4>Wrestling Origin</h4>
+      <p>Storylines and character development that frame matches</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Application</h4>
+    <p>Official narratives that shape acceptable political discourse</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>DISC (Distributed Idea Suppression Complex)</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Definition</h4>
+      <p>Emergent system that suppresses disruptive ideas to protect institutional fragility</p>
+    </div>
+    <div>
+      <h4>Wrestling Origin</h4>
+      <p>Preventing fans from learning behind-the-scenes reality</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Application</h4>
+    <p>Media blackouts, strategic silence, algorithmic suppression of dissent</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Stratified Lies</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Definition</h4>
+      <p>Hierarchical system of deceptions operating at multiple levels simultaneously</p>
+    </div>
+    <div>
+      <h4>Wrestling Origin</h4>
+      <p>Multiple levels: in-ring, backstage, media interviews, personal life</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Application</h4>
+    <p>Public rhetoric, party positioning, donor interests, deep state coordination</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Work vs Shoot</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Definition</h4>
+      <p>Work = scripted/fake performance; Shoot = genuine/real occurrence</p>
+    </div>
+    <div>
+      <h4>Wrestling Origin</h4>
+      <p>Distinguishing real incidents from planned storylines</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Application</h4>
+    <p>Real crises vs manufactured controversies for political advantage</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Breaking Kayfabe</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Definition</h4>
+      <p>Revealing the constructed nature of the performance, destroying its effectiveness</p>
+    </div>
+    <div>
+      <h4>Wrestling Origin</h4>
+      <p>Wrestlers appearing out of character or revealing script</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Application</h4>
+    <p>Revealing how political theater actually operates</p>
+  </div>
+</section>
+
+<section class=slide divider>
+  <h2>Examples Across Domains</h2>
+  <p>Mechanisms, audience participation, benefits/costs, and current status.</p>
+</section>
+
+<section class=slide>
+  <h3>Professional Wrestling</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Mechanism</h4>
+      <p>Predetermined outcomes presented as competitive sport</p>
+      <h4>Audience</h4>
+      <p>Fans know it's scripted but emotionally invest in storylines</p>
+    </div>
+    <div>
+      <h4>Benefits</h4>
+      <p>Safer than real combat, more entertaining than boring matches</p>
+      <h4>Costs When Exposed</h4>
+      <p>Loss of emotional investment, decline in viewership</p>
+    </div>
+  </div>
+  <div class=meta>
+    <strong>Status:</strong> Post-kayfabe era - openly acknowledged as entertainment
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Electoral Politics</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Mechanism</h4>
+      <p>&quot;Magician's choice&quot; - all candidates acceptable to international order</p>
+      <h4>Audience</h4>
+      <p>Voters know politicians lie but still engage in electoral theater</p>
+    </div>
+    <div>
+      <h4>Benefits</h4>
+      <p>Prevents populist disruption of international agreements</p>
+      <h4>Costs When Exposed</h4>
+      <p>Political instability, questioning of legitimate authority</p>
+    </div>
+  </div>
+  <div class=meta>
+    <strong>Status:</strong> Kayfabe breaking down - rise of populism, outsider candidates
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Financial Markets</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Mechanism</h4>
+      <p>Market &quot;fundamentals&quot; divorced from actual price movements</p>
+      <h4>Audience</h4>
+      <p>Investors know markets are manipulated but follow &quot;analysis&quot;</p>
+    </div>
+    <div>
+      <h4>Benefits</h4>
+      <p>Prevents market crashes from revealing underlying instability</p>
+      <h4>Costs When Exposed</h4>
+      <p>Market crashes when reality intrudes (2008, etc.)</p>
+    </div>
+  </div>
+  <div class=meta>
+    <strong>Status:</strong> Increasing awareness of Fed manipulation, Bitcoin alternative
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Media/Journalism</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Mechanism</h4>
+      <p>Gatekeeper role determining what stories get coverage</p>
+      <h4>Audience</h4>
+      <p>Readers know media bias exists but consume preferred narratives</p>
+    </div>
+    <div>
+      <h4>Benefits</h4>
+      <p>Maintains advertiser-friendly content, avoids controversy</p>
+      <h4>Costs When Exposed</h4>
+      <p>Loss of credibility, audience fragmentation</p>
+    </div>
+  </div>
+  <div class=meta>
+    <strong>Status:</strong> Legacy media losing gatekeeper power to social media
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Academic/Science</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Mechanism</h4>
+      <p>Peer review system protecting established paradigms from disruption</p>
+      <h4>Audience</h4>
+      <p>Academics know grant/publication games but play along</p>
+    </div>
+    <div>
+      <h4>Benefits</h4>
+      <p>Preserves research funding streams, prevents paradigm chaos</p>
+      <h4>Costs When Exposed</h4>
+      <p>Scientific stagnation, loss of public trust in expertise</p>
+    </div>
+  </div>
+  <div class=meta>
+    <strong>Status:</strong> Replication crisis exposing flawed peer review system
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Corporate Culture</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Mechanism</h4>
+      <p>Corporate mission statements vs actual profit maximization</p>
+      <h4>Audience</h4>
+      <p>Employees know corporate culture is performance but participate</p>
+    </div>
+    <div>
+      <h4>Benefits</h4>
+      <p>Maintains productivity through shared purpose illusion</p>
+      <h4>Costs When Exposed</h4>
+      <p>Employee cynicism, reduced organizational effectiveness</p>
+    </div>
+  </div>
+  <div class=meta>
+    <strong>Status:</strong> Remote work exposing performative nature of office culture
+  </div>
+</section>
+
+<section class=slide>
+  <h3>International Relations</h3>
+  <div class=grid-2>
+    <div>
+      <h4>Mechanism</h4>
+      <p>&quot;Rules-based international order&quot; vs great power competition</p>
+      <h4>Audience</h4>
+      <p>Citizens know diplomacy is theater but support &quot;national interests&quot;</p>
+    </div>
+    <div>
+      <h4>Benefits</h4>
+      <p>Prevents wars through managed competition and diplomacy</p>
+      <h4>Costs When Exposed</h4>
+      <p>Alliance breakdown, increased international conflict</p>
+    </div>
+  </div>
+  <div class=meta>
+    <strong>Status:</strong> Multipolar world challenging US-led international order
+  </div>
+</section>
+
+<section class=slide divider>
+  <h2>Psychological Mechanisms</h2>
+  <p>Why audiences participate and persist in kayfabe.</p>
+</section>
+
+<section class=slide>
+  <h3>Willing Suspension of Disbelief</h3>
+  <div class=grid-2>
+    <div>
+      <h4>How It Enables Kayfabe</h4>
+      <p>Audience chooses to believe despite knowing it's constructed</p>
+    </div>
+    <div>
+      <h4>Wrestling Example</h4>
+      <p>Fans cheer despite knowing outcomes are predetermined</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Example</h4>
+    <p>Voters emotionally invest despite cynicism about politics</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Cognitive Dissonance</h3>
+  <div class=grid-2>
+    <div>
+      <h4>How It Enables Kayfabe</h4>
+      <p>Mind reconciles contradictory evidence to maintain coherent worldview</p>
+    </div>
+    <div>
+      <h4>Wrestling Example</h4>
+      <p>Ignoring obvious coordination between &quot;enemies&quot;</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Example</h4>
+    <p>Ignoring party contradictions and policy failures</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Social Proof</h3>
+  <div class=grid-2>
+    <div>
+      <h4>How It Enables Kayfabe</h4>
+      <p>Others' participation validates your own participation</p>
+    </div>
+    <div>
+      <h4>Wrestling Example</h4>
+      <p>Following crowd reactions to determine who to support</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Example</h4>
+    <p>Voting patterns based on perceived social acceptability</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Authority Bias</h3>
+  <div class=grid-2>
+    <div>
+      <h4>How It Enables Kayfabe</h4>
+      <p>Deference to institutional expertise and established credentials</p>
+    </div>
+    <div>
+      <h4>Wrestling Example</h4>
+      <p>Trusting wrestling promoters' storyline presentations</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Example</h4>
+    <p>Trusting expert predictions and mainstream media framing</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>In-group Loyalty</h3>
+  <div class=grid-2>
+    <div>
+      <h4>How It Enables Kayfabe</h4>
+      <p>Loyalty to team/party overrides objective evaluation</p>
+    </div>
+    <div>
+      <h4>Wrestling Example</h4>
+      <p>Supporting favorite wrestlers regardless of performance</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Example</h4>
+    <p>Defending party positions regardless of merit</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Pattern Recognition</h3>
+  <div class=grid-2>
+    <div>
+      <h4>How It Enables Kayfabe</h4>
+      <p>Seeing meaningful patterns in random or manipulated events</p>
+    </div>
+    <div>
+      <h4>Wrestling Example</h4>
+      <p>Finding deep meaning in random booking decisions</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Example</h4>
+    <p>Seeing grand strategies in random political events</p>
+  </div>
+</section>
+
+<section class=slide>
+  <h3>Loss Aversion</h3>
+  <div class=grid-2>
+    <div>
+      <h4>How It Enables Kayfabe</h4>
+      <p>Fear of losing current system outweighs potential gains from truth</p>
+    </div>
+    <div>
+      <h4>Wrestling Example</h4>
+      <p>Preferring familiar storylines over risking disappointment</p>
+    </div>
+  </div>
+  <div class=callout>
+    <h4>Political Example</h4>
+    <p>Preferring known corruption over uncertain reform</p>
+  </div>
+</section>
+
+</div>
+<div class=nav>Use ← → or space/shift+space. Press P to toggle print view.</div>
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let i = 0;
+  function show(idx){
+    i = Math.max(0, Math.min(idx, slides.length - 1));
+    slides.forEach((s, j) => s.style.display = (j === i ? 'flex' : 'none'));
+    document.title = (i+1) + '/' + slides.length + ' — Political Kayfabe';
+    const p = (100 * (i+1) / slides.length).toFixed(2) + '%';
+    document.getElementById('progress').style.width = p;
+    history.replaceState(null, '', '#'+(i+1));
+  }
+  function fromHash(){
+    const n = parseInt(location.hash.slice(1), 10);
+    if (!isNaN(n) && n >= 1 && n <= slides.length) return n-1;
+    return 0;
+  }
+  window.addEventListener('keydown', (e) => {
+    if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); show(i+1); }
+    if (['ArrowLeft','PageUp'].includes(e.key) || (e.key === ' ' && e.shiftKey)) { e.preventDefault(); show(i-1); }
+    if (e.key.toLowerCase() === 'p') { window.print(); }
+  });
+  window.addEventListener('hashchange', () => show(fromHash()));
+  show(fromHash());
+})();
+</script>
+</body>
+</html>
